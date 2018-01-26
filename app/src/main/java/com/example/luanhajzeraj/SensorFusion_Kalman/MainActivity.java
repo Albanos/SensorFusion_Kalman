@@ -68,6 +68,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             makeAnythingElseWithPermission();
         }
 
+
     }
 
     @SuppressLint("MissingPermission")
