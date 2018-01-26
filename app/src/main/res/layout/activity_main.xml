@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.luanhajzeraj.SensorFusion_Kalman.com.example.luanhajzeraj.SensorFusion_Kalman.MainActivity">
+
+    <RelativeLayout
+        android:layout_width="368dp"
+        android:layout_height="495dp"
+        tools:layout_editor_absoluteX="8dp"
+        tools:layout_editor_absoluteY="8dp">
+
+        <TextView
+            android:id="@+id/tv_nameAccelerometerX"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/tv_nameLongitudeSystem"
+            android:layout_below="@+id/tv_nameLongitudeSystem"
+            android:layout_marginTop="19dp"
+            android:text="L Accelerometer_X"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tv_nameAccelerometerY"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignEnd="@+id/tv_nameAccelerometerX"
+            android:layout_below="@+id/tv_nameAccelerometerX"
+            android:layout_marginTop="17dp"
+            android:text="L Accelerometer_Y"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tv_nameLatitudeSystem"
+            android:layout_width="140dp"
+            android:layout_height="25dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginStart="13dp"
+            android:layout_marginTop="25dp"
+            android:text="Latitude_System"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toStartOf="@+id/tv_outputLatitudeSystem"
+            tools:layout_editor_absoluteY="62dp" />
+
+        <TextView
+            android:id="@+id/tv_nameLongitudeSystem"
+            android:layout_width="wrap_content"
+            android:layout_height="25dp"
+            android:layout_alignStart="@+id/tv_nameLatitudeSystem"
+            android:layout_below="@+id/tv_nameLatitudeSystem"
+            android:layout_marginTop="11dp"
+            android:text="Longitude_System"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toStartOf="@+id/tv_outputLongitudeSystem"
+            tools:layout_editor_absoluteY="117dp" />
+
+        <TextView
+            android:id="@+id/tv_outputLatitudeSystem"
+            android:layout_width="156dp"
+            android:layout_height="25dp"
+            android:layout_alignBaseline="@+id/tv_nameLatitudeSystem"
+            android:layout_alignBottom="@+id/tv_nameLatitudeSystem"
+            android:layout_alignStart="@+id/tv_outputLongitudeSystem"
+            android:text="..."
+            android:textSize="18sp"
+            tools:layout_editor_absoluteX="212dp"
+            tools:layout_editor_absoluteY="62dp" />
+
+        <TextView
+            android:id="@+id/tv_outputLongitudeSystem"
+            android:layout_width="156dp"
+            android:layout_height="25dp"
+            android:layout_alignBaseline="@+id/tv_nameLongitudeSystem"
+            android:layout_alignBottom="@+id/tv_nameLongitudeSystem"
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="14dp"
+            android:text="..."
+            android:textSize="18sp"
+            tools:layout_editor_absoluteX="212dp"
+            tools:layout_editor_absoluteY="117dp" />
+
+        <TextView
+            android:id="@+id/tv_outputAccelerometer_X"
+            android:layout_width="156dp"
+            android:layout_height="25dp"
+            android:layout_alignBaseline="@+id/tv_nameAccelerometerX"
+            android:layout_alignBottom="@+id/tv_nameAccelerometerX"
+            android:layout_alignStart="@+id/tv_outputLongitudeSystem"
+            android:text="..."
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tv_outputAccelerometer_Y"
+            android:layout_width="156dp"
+            android:layout_height="25dp"
+            android:layout_above="@+id/tv_nameAccelerometerZ"
+            android:layout_alignStart="@+id/tv_outputAccelerometer_X"
+            android:text="..."
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tv_nameAccelerometerZ"
+            android:layout_width="wrap_content"
+            android:layout_height="25dp"
+            android:layout_alignStart="@+id/tv_nameAccelerometerY"
+            android:layout_below="@+id/tv_nameAccelerometerY"
+            android:layout_marginTop="21dp"
+            android:text="L Accelerometer_Z"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toStartOf="@+id/tv_outputLongitudeSystem"
+            tools:layout_editor_absoluteY="117dp" />
+
+        <TextView
+            android:id="@+id/tv_outputAccelerometer_Z"
+            android:layout_width="156dp"
+            android:layout_height="25dp"
+            android:layout_alignBaseline="@+id/tv_nameAccelerometerZ"
+            android:layout_alignBottom="@+id/tv_nameAccelerometerZ"
+            android:layout_alignStart="@+id/tv_outputAccelerometer_Y"
+            android:text="..."
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/btn_plotLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="70dp"
+            android:onClick="onPlotLocationClick"
+            android:text="Plot Location to map" />
+    </RelativeLayout>
+</android.support.constraint.ConstraintLayout>
