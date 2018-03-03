@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">SensorFusion_Kalman</string>
+    <string name="tf_Name_Latitude">Latitude</string>
+    <string name="tf_Name_Longitude">Longitude</string>
+
+    <string name="tf_Name_Accel_X">Accelerometer_X</string>
+    <string name="tf_Name_Accel_Y">Accelerometer_Y</string>
+    <string name="tf_Name_Veloc_X">Velocity_X</string>
+    <string name="tf_Name_Veloc_Y">Velocity_Y</string>
 </resources>

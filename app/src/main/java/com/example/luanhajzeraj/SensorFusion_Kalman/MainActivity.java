@@ -21,29 +21,36 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import model.EstimationFilter;
+
 public class MainActivity extends AppCompatActivity implements SensorEventListener{
 
     private final int PERMISSION_REQUEST = 0;
 
     private double latitude;
     private double longitude;
-    private double accelerometer_x;
-    private double accelerometer_y;
-    private double accelerometer_z;
 
-    private float accurancyOfDevice;
-    private float speedOfDevice;
+    private float init_vel[] = {0,0};
+    private float vel[] = new float[2];
+
+    float[] orientationAngles = new float[3];
+    float[] rotationMatrix = new float[9];
 
     private LocationManager lm;
     private LocationListener locationListener;
     private SensorManager sensorManager;
-    private Sensor sensor;
+
+    private float[] valuesOfAccel = new float[3];
+    private float[] valuesOfMagnet = new float[3];
+
+    private EstimationFilter filter = EstimationFilter.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //filter.tmp();
         showValueOfPosition();
     }
 
@@ -55,13 +62,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 != PackageManager.PERMISSION_GRANTED) {
 
             // Sollten wir ein Pop-up für die Permission zeigen?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+            //if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    //Manifest.permission.ACCESS_FINE_LOCATION)) {
 
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         PERMISSION_REQUEST);
-            }
+            //}
+
         }
         //Berechtigungen wurden zuvor schon erteilt
         else {
@@ -78,8 +86,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 longitude = location.getLongitude();
                 latitude = location.getLatitude();
-                accurancyOfDevice = location.getAccuracy();
-                speedOfDevice = location.getSpeed();
+
+                filter.setPositionValues(latitude,longitude);
+
                 Log.d("LH", "In update GPS-Listener");
                 writeGPSValuesToScreen(latitude, longitude);
 
@@ -160,6 +169,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         this.startActivity(intent);
     }
 
+
     public void makeAnythingElseWithPermission() {
         lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
@@ -170,12 +180,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 
             @SuppressLint("MissingPermission") Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-
             if (location != null) {
                 latitude = location.getLatitude();
                 longitude = location.getLongitude();
-                accurancyOfDevice = location.getAccuracy();
-                speedOfDevice = location.getSpeed();
 
                 writeGPSValuesToScreen(latitude, longitude);
 
@@ -186,49 +193,109 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             finish();
         }
 
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
-        registerAccelerometerListener();
+        registerLinAccelerometerListener();
+        registerAccelerometerAndMagneticListener();
 
 
+        //updateOrientationAngles();
+        System.out.println();
     }
 
-    private void registerAccelerometerListener(){
-        sensorManager.registerListener((SensorEventListener) this, sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION), SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
+    private void updateOrientationAngles() {
+        sensorManager.getRotationMatrix(rotationMatrix,null, valuesOfAccel, valuesOfMagnet);
+        float[] orientationValues = sensorManager.getOrientation(rotationMatrix, orientationAngles);
+
+        // Reiche aktuelle Orientierungswerte an den Filter weiter
+        // Die Rotation um x- & y-Achse wird durch den zweiten und dritten Wert des arrays gegeben
+        filter.setOrientationValues(orientationValues[1],orientationValues[2]);
+    }
+
+    // Wird für die Berechnung des Orientierungswinkels benötigt, da Schwerkraft enthalten
+    private void registerAccelerometerAndMagneticListener() {
+        sensorManager.registerListener( this,
+                sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                SensorManager.SENSOR_DELAY_UI);
+
+        sensorManager.registerListener( this,
+                sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),
+                SensorManager.SENSOR_DELAY_UI);
+    }
+
+    private void registerLinAccelerometerListener(){
+        sensorManager.registerListener((SensorEventListener) this,
+                sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION),
+                SensorManager.SENSOR_DELAY_UI);
     }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+        updateOrientationAngles();
         if (event.sensor.getType()==Sensor.TYPE_LINEAR_ACCELERATION){
-            accelerometer_x=event.values[0];
-            accelerometer_y=event.values[1];
-            accelerometer_z=event.values[2];
+            float linAccelerometer_x = event.values[0];
+            float linAccelerometer_y = event.values[1];
 
-            writeAccelerometerValuesToScreen(accelerometer_x,accelerometer_y,accelerometer_z);
+            // Reiche Werte an Filter weiter
+            filter.setLinAccelerometerValues(linAccelerometer_x,linAccelerometer_y);
+
+            // Kopiere den gesamten Inhalt in das vorgesehen Array
+            System.arraycopy(event.values,0,valuesOfAccel,0,valuesOfAccel.length);
+
+            writeAccelerometerValuesToScreen(linAccelerometer_x, linAccelerometer_y);
+
+            // Rufe funktion zur Berechnung der Geschwindigkeit
+            float dt = 0.01f;
+
+            calculateLinearVelocity(linAccelerometer_x,linAccelerometer_y,dt);
+
+            writeVelocityValuesToScreen(vel[0], vel[1]);
+
+        }
+        else if(event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD){
+            float magneticField_x = event.values[0];
+            float magneticField_y = event.values[1];
+
+            // Kopiere den gesamten Inhalt in das vorgesehen Array
+            System.arraycopy(event.values,0,valuesOfMagnet,0,valuesOfMagnet.length);
+
+        }
+        else if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
+            float accel_x = event.values[0];
+            float accel_y = event.values[1];
+
+            // Kopiere den gesamten Inhalt in das vorgesehen Array
+            System.arraycopy(event.values,0,valuesOfAccel,0,valuesOfAccel.length);
+
+            Log.d("LH", "Orientation_x:  "+orientationAngles[1]);
         }
     }
 
-    private void writeAccelerometerValuesToScreen(double accelerometer_x, double accelerometer_y, double accelerometer_z) {
+    private void writeVelocityValuesToScreen(float vel_x, float vel_y) {
+        TextView output_vel_x = (TextView) findViewById(R.id.tv_outputVelocity_X);
+        output_vel_x.setText(Float.toString(vel_x));
+
+        TextView output_vel_y = (TextView) findViewById(R.id.tv_outputVelocity_Y);
+        output_vel_y.setText(Float.toString(vel_y));
+    }
+
+
+    private void writeAccelerometerValuesToScreen(float accelerometer_x, float accelerometer_y) {
         TextView output_Accelerometer_x = (TextView) findViewById(R.id.tv_outputAccelerometer_X);
-        output_Accelerometer_x.setText(Double.toString(accelerometer_x));
+        output_Accelerometer_x.setText(Float.toString(accelerometer_x));
 
         TextView output_Accelerometer_y = (TextView) findViewById(R.id.tv_outputAccelerometer_Y);
-        output_Accelerometer_y.setText(Double.toString(accelerometer_y));
-
-        TextView output_Aceelerometer_z = findViewById(R.id.tv_outputAccelerometer_Z);
-        output_Aceelerometer_z.setText(Double.toString(accelerometer_z));
+        output_Accelerometer_y.setText(Float.toString(accelerometer_y));
     }
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-
-    }
+    public void onAccuracyChanged(Sensor sensor, int i) {}
 
     @Override
     public void onPause() {
         if(lm != null) {
             lm.removeUpdates(locationListener);
+            sensorManager.unregisterListener(this);
             Log.d("LH", "in onPause");
         }
         super.onPause();
@@ -237,9 +304,29 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @SuppressLint("MissingPermission")
     @Override
     public void onResume() {
+        super.onResume();
+
         if(lm != null) {
             lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 1, locationListener);
         }
-        super.onResume();
+        registerLinAccelerometerListener();
+        registerAccelerometerAndMagneticListener();
+    }
+
+    // Berechnung der Geschwindigkeit, auf Basis der jeweilligen Beschleunigung (linear)
+    private void calculateLinearVelocity(float accelerometer_x, float accelerometer_y, float dt) {
+        // Zeitänderung = 1 sek
+        //float dt =  1;
+
+        // Geschwindigkeit berechnen
+
+
+        // Berechnung von linearer Geschwindigkeit, siehe wikipedia: "Gleichmässig beschleunigte Bew."
+        vel[0] = init_vel[0] + (accelerometer_x * dt);
+        vel[1] = init_vel[1] + (accelerometer_y * dt);
+
+        // Neue "Ausgangsgeschwindigkeit" setzen
+        init_vel[0] = vel[0];
+        init_vel[1] = vel[1];
     }
 }

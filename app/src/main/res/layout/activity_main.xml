@@ -18,9 +18,11 @@
             android:layout_height="wrap_content"
             android:layout_alignStart="@+id/tv_nameLongitudeSystem"
             android:layout_below="@+id/tv_nameLongitudeSystem"
-            android:layout_marginTop="19dp"
-            android:text="L Accelerometer_X"
-            android:textSize="18sp" />
+            android:layout_marginTop="11dp"
+            android:text="@string/tf_Name_Accel_X"
+            android:textSize="18sp"
+            tools:layout_editor_absoluteX="0dp"
+            tools:layout_editor_absoluteY="38dp" />
 
         <TextView
             android:id="@+id/tv_nameAccelerometerY"
@@ -29,7 +31,7 @@
             android:layout_alignEnd="@+id/tv_nameAccelerometerX"
             android:layout_below="@+id/tv_nameAccelerometerX"
             android:layout_marginTop="17dp"
-            android:text="L Accelerometer_Y"
+            android:text="@string/tf_Name_Accel_Y"
             android:textSize="18sp" />
 
         <TextView
@@ -40,7 +42,7 @@
             android:layout_alignParentTop="true"
             android:layout_marginStart="13dp"
             android:layout_marginTop="25dp"
-            android:text="Latitude_System"
+            android:text="@string/tf_Name_Latitude"
             android:textSize="18sp"
             app:layout_constraintEnd_toStartOf="@+id/tv_outputLatitudeSystem"
             tools:layout_editor_absoluteY="62dp" />
@@ -52,7 +54,7 @@
             android:layout_alignStart="@+id/tv_nameLatitudeSystem"
             android:layout_below="@+id/tv_nameLatitudeSystem"
             android:layout_marginTop="11dp"
-            android:text="Longitude_System"
+            android:text="@string/tf_Name_Longitude"
             android:textSize="18sp"
             app:layout_constraintEnd_toStartOf="@+id/tv_outputLongitudeSystem"
             tools:layout_editor_absoluteY="117dp" />
@@ -96,30 +98,9 @@
             android:id="@+id/tv_outputAccelerometer_Y"
             android:layout_width="156dp"
             android:layout_height="25dp"
-            android:layout_above="@+id/tv_nameAccelerometerZ"
+            android:layout_alignBaseline="@+id/tv_nameAccelerometerY"
+            android:layout_alignBottom="@+id/tv_nameAccelerometerY"
             android:layout_alignStart="@+id/tv_outputAccelerometer_X"
-            android:text="..."
-            android:textSize="18sp" />
-
-        <TextView
-            android:id="@+id/tv_nameAccelerometerZ"
-            android:layout_width="wrap_content"
-            android:layout_height="25dp"
-            android:layout_alignStart="@+id/tv_nameAccelerometerY"
-            android:layout_below="@+id/tv_nameAccelerometerY"
-            android:layout_marginTop="21dp"
-            android:text="L Accelerometer_Z"
-            android:textSize="18sp"
-            app:layout_constraintEnd_toStartOf="@+id/tv_outputLongitudeSystem"
-            tools:layout_editor_absoluteY="117dp" />
-
-        <TextView
-            android:id="@+id/tv_outputAccelerometer_Z"
-            android:layout_width="156dp"
-            android:layout_height="25dp"
-            android:layout_alignBaseline="@+id/tv_nameAccelerometerZ"
-            android:layout_alignBottom="@+id/tv_nameAccelerometerZ"
-            android:layout_alignStart="@+id/tv_outputAccelerometer_Y"
             android:text="..."
             android:textSize="18sp" />
 
@@ -132,5 +113,45 @@
             android:layout_marginBottom="70dp"
             android:onClick="onPlotLocationClick"
             android:text="Plot Location to map" />
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/tv_nameAccelerometerY"
+            android:layout_below="@+id/tv_nameAccelerometerY"
+            android:layout_marginTop="16dp"
+            android:text="@string/tf_Name_Veloc_X"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/textView"
+            android:layout_below="@+id/textView"
+            android:layout_marginTop="20dp"
+            android:text="@string/tf_Name_Veloc_Y"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tv_outputVelocity_X"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@+id/textView"
+            android:layout_alignEnd="@+id/tv_outputAccelerometer_Y"
+            android:layout_alignStart="@+id/tv_outputAccelerometer_Y"
+            android:text="..."
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tv_outputVelocity_Y"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@+id/textView2"
+            android:layout_alignEnd="@+id/tv_outputVelocity_X"
+            android:layout_alignStart="@+id/tv_outputVelocity_X"
+            android:text="..."
+            android:textSize="18sp" />
     </RelativeLayout>
 </android.support.constraint.ConstraintLayout>
