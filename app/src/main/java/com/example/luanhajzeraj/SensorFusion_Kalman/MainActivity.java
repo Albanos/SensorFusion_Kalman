@@ -21,29 +21,29 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import geodesy.GlobalPosition;
 import model.EstimationFilter;
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener{
+public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     private final int PERMISSION_REQUEST = 0;
 
     private double latitude;
     private double longitude;
-
-    private float init_vel[] = {0,0};
-    private float vel[] = new float[2];
-
-    float[] orientationAngles = new float[3];
-    float[] rotationMatrix = new float[9];
+    private double altitude;
 
     private LocationManager lm;
     private LocationListener locationListener;
     private SensorManager sensorManager;
 
-    private float[] valuesOfAccel = new float[3];
-    private float[] valuesOfMagnet = new float[3];
-
     private EstimationFilter filter = EstimationFilter.getInstance();
+
+    // Zum test: speichere alte position und berechne differenz nur bei änderung
+    private GlobalPosition globalPosition_old = null;
+    private GlobalPosition globalPosition;
+
+    // Update-Zeit: 5s
+    private final int UPDATE_TIME_LOCATION = 5000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,21 +61,43 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
 
-            // Sollten wir ein Pop-up für die Permission zeigen?
-            //if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    //Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        PERMISSION_REQUEST);
-            //}
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    PERMISSION_REQUEST);
 
         }
         //Berechtigungen wurden zuvor schon erteilt
         else {
             makeAnythingElseWithPermission();
         }
+    }
 
+    public void makeAnythingElseWithPermission() {
+        lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        //Frage bei Änderung von 1m alle 5sek ab -->MERKE: kann auch null zurück liefern!!!
+        registerGPSListener();
+
+        //Prüfe, ob GPS aktiviert ist. Agiere nur dann, sonst Toast ausgeben
+        if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+
+            @SuppressLint("MissingPermission") Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (location != null) {
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
+
+                writeGPSValuesToScreen(latitude, longitude);
+
+            }
+
+        } else {
+            Toast.makeText(this, "GPS is not avaiable! Activate GPS on the device and restart the application", Toast.LENGTH_LONG).show();
+            finish();
+        }
+
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+
+        registerLinAccelerometerListener();
 
     }
 
@@ -86,10 +108,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 longitude = location.getLongitude();
                 latitude = location.getLatitude();
+                altitude = location.getAltitude();
 
-                filter.setPositionValues(latitude,longitude);
+                filter.setPositionValues(latitude, longitude, altitude);
+                globalPosition = filter
+                        .calculateCoordinatesOnLatLon(latitude, longitude, altitude);
 
-                Log.d("LH", "In update GPS-Listener");
+                // Zum test: wenn positionen unterschiedlich, dann gab es location-update.
+                // Berechne darum Abstand und winkel zwischen beiden positionen
+                if (! globalPosition.equals(globalPosition_old)) {
+                    double dist = filter.coordinateDistanceBetweenTwoPoints(globalPosition, globalPosition_old);
+
+                    if (globalPosition_old != null) {
+                        Log.d("LH", "Distanz zwischen " + globalPosition.getLatitude() + " , " + globalPosition.getLongitude()
+                                + " & " + globalPosition_old.getLatitude() + " , " + globalPosition_old.getLongitude() + "ist:  "
+                                + dist);
+                    }
+                    globalPosition_old = globalPosition;
+                }
+
                 writeGPSValuesToScreen(latitude, longitude);
 
             }
@@ -111,8 +148,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         };
 
-        //Setze Listener bei Abweichung von einem Meter, innerhalb von 10 sek
-        lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 1, locationListener);
+        //Setze Listener bei Abweichung von einem Meter, innerhalb von 5 sek
+        lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_TIME_LOCATION, 1, locationListener);
     }
 
     @Override
@@ -157,73 +194,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public void onPlotLocationClick(View view) {
-        //String uri = String.format(Locale.ENGLISH, "geo:%f,%f", latitude, longitude);
-        //String uri = String.format(Locale.ENGLISH, "geo:0,0");
-        //String uri = "http://maps.google.com/maps?saddr=" + latitude + "," + longitude;
-        //String uri = "http://maps.google.com/maps?daddr=51.3160691,9.3912614";
-        //String uri = String.format(Locale.ENGLISH, "geo:51.3160691,9.3912614");
-        //String uri = String.format(Locale.ENGLISH, "geo:,%f", latitude, longitude);
-        //String uri = "geo:"+latitude+","+longitude;
+
         String geoUri = "http://maps.google.com/maps?q=loc:" + latitude + "," + longitude + " (TADA!)";
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(geoUri));
         this.startActivity(intent);
     }
 
 
-    public void makeAnythingElseWithPermission() {
-        lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
-        //Frage bei Änderung von 1m alle 10 sek ab -->MERKE: kann auch null zurück liefern!!!
-        registerGPSListener();
-
-        //Prüfe, ob GPS aktiviert ist. Agiere nur dann, sonst Toast ausgeben
-        if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-
-            @SuppressLint("MissingPermission") Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if (location != null) {
-                latitude = location.getLatitude();
-                longitude = location.getLongitude();
-
-                writeGPSValuesToScreen(latitude, longitude);
-
-            }
-
-        } else {
-            Toast.makeText(this, "GPS is not avaiable! Activate GPS on the device and restart the application", Toast.LENGTH_LONG).show();
-            finish();
-        }
-
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-
-        registerLinAccelerometerListener();
-        registerAccelerometerAndMagneticListener();
-
-
-        //updateOrientationAngles();
-        System.out.println();
-    }
-
-    private void updateOrientationAngles() {
-        sensorManager.getRotationMatrix(rotationMatrix,null, valuesOfAccel, valuesOfMagnet);
-        float[] orientationValues = sensorManager.getOrientation(rotationMatrix, orientationAngles);
-
-        // Reiche aktuelle Orientierungswerte an den Filter weiter
-        // Die Rotation um x- & y-Achse wird durch den zweiten und dritten Wert des arrays gegeben
-        filter.setOrientationValues(orientationValues[1],orientationValues[2]);
-    }
-
-    // Wird für die Berechnung des Orientierungswinkels benötigt, da Schwerkraft enthalten
-    private void registerAccelerometerAndMagneticListener() {
-        sensorManager.registerListener( this,
-                sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
-                SensorManager.SENSOR_DELAY_UI);
-
-        sensorManager.registerListener( this,
-                sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),
-                SensorManager.SENSOR_DELAY_UI);
-    }
-
-    private void registerLinAccelerometerListener(){
+    private void registerLinAccelerometerListener() {
         sensorManager.registerListener((SensorEventListener) this,
                 sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION),
                 SensorManager.SENSOR_DELAY_UI);
@@ -231,43 +209,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        updateOrientationAngles();
-        if (event.sensor.getType()==Sensor.TYPE_LINEAR_ACCELERATION){
+        //updateOrientationAngles();
+        if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
             float linAccelerometer_x = event.values[0];
             float linAccelerometer_y = event.values[1];
 
             // Reiche Werte an Filter weiter
-            filter.setLinAccelerometerValues(linAccelerometer_x,linAccelerometer_y);
-
-            // Kopiere den gesamten Inhalt in das vorgesehen Array
-            System.arraycopy(event.values,0,valuesOfAccel,0,valuesOfAccel.length);
+            filter.setLinAccelerometerValues(linAccelerometer_x, linAccelerometer_y);
 
             writeAccelerometerValuesToScreen(linAccelerometer_x, linAccelerometer_y);
 
-            // Rufe funktion zur Berechnung der Geschwindigkeit
-            float dt = 0.01f;
+            float[] velocity = filter.getLinVeloc();
+            writeVelocityValuesToScreen(velocity[0], velocity[1]);
 
-            calculateLinearVelocity(linAccelerometer_x,linAccelerometer_y,dt);
-
-            writeVelocityValuesToScreen(vel[0], vel[1]);
-
-        }
-        else if(event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD){
-            float magneticField_x = event.values[0];
-            float magneticField_y = event.values[1];
-
-            // Kopiere den gesamten Inhalt in das vorgesehen Array
-            System.arraycopy(event.values,0,valuesOfMagnet,0,valuesOfMagnet.length);
-
-        }
-        else if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
-            float accel_x = event.values[0];
-            float accel_y = event.values[1];
-
-            // Kopiere den gesamten Inhalt in das vorgesehen Array
-            System.arraycopy(event.values,0,valuesOfAccel,0,valuesOfAccel.length);
-
-            Log.d("LH", "Orientation_x:  "+orientationAngles[1]);
         }
     }
 
@@ -289,11 +243,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {}
+    public void onAccuracyChanged(Sensor sensor, int i) {
+    }
 
     @Override
     public void onPause() {
-        if(lm != null) {
+        if (lm != null) {
             lm.removeUpdates(locationListener);
             sensorManager.unregisterListener(this);
             Log.d("LH", "in onPause");
@@ -306,27 +261,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onResume() {
         super.onResume();
 
-        if(lm != null) {
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 1, locationListener);
+        if (lm != null) {
+            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_TIME_LOCATION, 1, locationListener);
         }
         registerLinAccelerometerListener();
-        registerAccelerometerAndMagneticListener();
     }
 
-    // Berechnung der Geschwindigkeit, auf Basis der jeweilligen Beschleunigung (linear)
-    private void calculateLinearVelocity(float accelerometer_x, float accelerometer_y, float dt) {
-        // Zeitänderung = 1 sek
-        //float dt =  1;
+    /**
+     * Rufe nach click auf den entsprechenden Button den Scrren zum Zeichnen von Latitude und
+     * Longitude auf. Übergebe Länge, breite und Höhe an den Screen, via intent
+     *
+     * @param view
+     */
+    public void onToCoordinateScreenClick(View view) {
+        Intent intent = new Intent(MainActivity.this, DrawLatAndLon.class);
+        intent.putExtra("latitude", latitude);
+        intent.putExtra("longitude", longitude);
+        intent.putExtra("altitude", altitude);
 
-        // Geschwindigkeit berechnen
-
-
-        // Berechnung von linearer Geschwindigkeit, siehe wikipedia: "Gleichmässig beschleunigte Bew."
-        vel[0] = init_vel[0] + (accelerometer_x * dt);
-        vel[1] = init_vel[1] + (accelerometer_y * dt);
-
-        // Neue "Ausgangsgeschwindigkeit" setzen
-        init_vel[0] = vel[0];
-        init_vel[1] = vel[1];
+        startActivity(intent);
     }
+
 }
