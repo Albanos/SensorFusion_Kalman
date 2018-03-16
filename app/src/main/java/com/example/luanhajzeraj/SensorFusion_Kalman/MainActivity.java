@@ -32,15 +32,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private double longitude;
     private double altitude;
 
+    private float[] velocity = {0.0f, 0.0f};
+
     private LocationManager lm;
     private LocationListener locationListener;
     private SensorManager sensorManager;
 
     private EstimationFilter filter = EstimationFilter.getInstance();
-
-    // Zum test: speichere alte position und berechne differenz nur bei änderung
-    private GlobalPosition globalPosition_old = null;
-    private GlobalPosition globalPosition;
 
     // Update-Zeit: 5s
     private final int UPDATE_TIME_LOCATION = 5000;
@@ -111,23 +109,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 altitude = location.getAltitude();
 
                 filter.setPositionValues(latitude, longitude, altitude);
-                globalPosition = filter
-                        .calculateCoordinatesOnLatLon(latitude, longitude, altitude);
-
-                // Zum test: wenn positionen unterschiedlich, dann gab es location-update.
-                // Berechne darum Abstand und winkel zwischen beiden positionen
-                if (! globalPosition.equals(globalPosition_old)) {
-                    double dist = filter.coordinateDistanceBetweenTwoPoints(globalPosition, globalPosition_old);
-
-                    if (globalPosition_old != null) {
-                        Log.d("LH", "Distanz zwischen " + globalPosition.getLatitude() + " , " + globalPosition.getLongitude()
-                                + " & " + globalPosition_old.getLatitude() + " , " + globalPosition_old.getLongitude() + "ist:  "
-                                + dist);
-                    }
-                    globalPosition_old = globalPosition;
-                }
 
                 writeGPSValuesToScreen(latitude, longitude);
+                Log.d("LH", "GPS-Update");
 
             }
 
@@ -193,13 +177,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
-    public void onPlotLocationClick(View view) {
-
-        String geoUri = "http://maps.google.com/maps?q=loc:" + latitude + "," + longitude + " (TADA!)";
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(geoUri));
-        this.startActivity(intent);
-    }
-
 
     private void registerLinAccelerometerListener() {
         sensorManager.registerListener((SensorEventListener) this,
@@ -219,7 +196,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             writeAccelerometerValuesToScreen(linAccelerometer_x, linAccelerometer_y);
 
-            float[] velocity = filter.getLinVeloc();
+            velocity = filter.getLinVeloc();
             writeVelocityValuesToScreen(velocity[0], velocity[1]);
 
         }
@@ -263,23 +240,42 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         if (lm != null) {
             lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_TIME_LOCATION, 1, locationListener);
+            Log.d("LH", "In MainActivity, onResume!");
+            Log.d("LH", "LocationListener reaktiviert");
         }
         registerLinAccelerometerListener();
     }
 
-    /**
-     * Rufe nach click auf den entsprechenden Button den Scrren zum Zeichnen von Latitude und
-     * Longitude auf. Übergebe Länge, breite und Höhe an den Screen, via intent
-     *
-     * @param view
-     */
-    public void onToCoordinateScreenClick(View view) {
-        Intent intent = new Intent(MainActivity.this, DrawLatAndLon.class);
-        intent.putExtra("latitude", latitude);
-        intent.putExtra("longitude", longitude);
-        intent.putExtra("altitude", altitude);
 
-        startActivity(intent);
+    public void inMainActivityOnButtonClick(View view){
+
+        // Plote Länge und Breite in Google-Maps
+        if(view.getId() == R.id.btn_plotLocation){
+            String geoUri = "http://maps.google.com/maps?q=loc:" + latitude + "," + longitude + " (TADA!)";
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(geoUri));
+            this.startActivity(intent);
+        }
+
+        // Gebe Länge, Breite und Höhe an den Screen via intent weiter
+        if(view.getId() == R.id.btn_toCoordinateScreen){
+            Intent intent = new Intent(MainActivity.this, DrawLatAndLon.class);
+            intent.putExtra("latitude", latitude);
+            intent.putExtra("longitude", longitude);
+            intent.putExtra("altitude", altitude);
+
+            startActivity(intent);
+        }
+
+        // Setze die Geschwindigkeit in x- und y-Richtung zurück
+        if(view.getId() == R.id.btn_resetVelocity){
+            velocity[0] = 0.0f;
+            velocity[1] = 0.0f;
+
+            filter.setLinVeloc(velocity);
+            filter.setInit_linVeloc(velocity);
+
+            writeVelocityValuesToScreen(velocity[0],velocity[1]);
+        }
     }
 
 }
