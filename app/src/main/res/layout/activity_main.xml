@@ -115,7 +115,7 @@
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
             android:layout_marginBottom="70dp"
-            android:onClick="onPlotLocationClick"
+            android:onClick="inMainActivityOnButtonClick"
             android:text="Plot Location to map" />
 
         <TextView
@@ -165,7 +165,18 @@
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
             android:layout_marginBottom="14dp"
-            android:onClick="onToCoordinateScreenClick"
+            android:onClick="inMainActivityOnButtonClick"
             android:text="to CoordinateScreen" />
-    </RelativeLayout>
+
+        <Button
+            android:id="@+id/btn_resetVelocity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/btn_plotLocation"
+            android:layout_alignEnd="@+id/btn_toCoordinateScreen"
+            android:layout_alignStart="@+id/btn_toCoordinateScreen"
+            android:layout_marginBottom="17dp"
+            android:onClick="inMainActivityOnButtonClick"
+            android:text="Reset velocity" />
+</RelativeLayout>
 <!--</android.support.constraint.ConstraintLayout>-->

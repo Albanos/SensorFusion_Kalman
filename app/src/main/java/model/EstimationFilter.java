@@ -214,4 +214,12 @@ public class EstimationFilter {
     public double getAltitude() {
         return altitude;
     }
+
+    public void setLinVeloc(float[] linVeloc) {
+        this.linVeloc = linVeloc;
+    }
+
+    public void setInit_linVeloc(float[] init_linVeloc) {
+        this.init_linVeloc = init_linVeloc;
+    }
 }

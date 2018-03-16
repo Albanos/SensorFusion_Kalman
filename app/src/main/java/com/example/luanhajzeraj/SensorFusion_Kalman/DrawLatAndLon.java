@@ -3,6 +3,9 @@ package com.example.luanhajzeraj.SensorFusion_Kalman;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 
 import geodesy.GlobalPosition;
 import model.EstimationFilter;
@@ -24,18 +27,19 @@ public class DrawLatAndLon extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //setContentView(R.layout.activity_draw_lat_and_lon);
 
         setLatAndLonAndAlt();
 
-        drawCoordinateSystem();
+        setContentView(R.layout.activity_draw_lat_and_lon);
+
+        drawCoordinateSystemWithPoints();
+
+
 
     }
 
-    /**
-     * Zeichnet das Koordinatensystem, zusammen mit seinen Punkten.
-     */
-    private void drawCoordinateSystem() {
+    private void drawCoordinateSystemWithPoints(){
+
         DrawView drawView = new DrawView(this);
 
         // Ermitteln der Display breite und höhe
@@ -51,7 +55,16 @@ public class DrawLatAndLon extends AppCompatActivity {
         drawView.setLongitude(longitude);
         drawView.setAltitude(altitude);
 
-        if(latitude_old != 0 && longitude_old != 0) {
+        drawView.setLatitude_old(latitude_old);
+        drawView.setLongitude_old(longitude_old);
+        drawView.setAltitude_old(altitude_old);
+
+
+        TextView tv_nothingToPlot = (TextView) findViewById(R.id.tv_Activity_drawLatAndLon);
+
+        if((latitude != latitude_old && latitude_old != 0) && (longitude != longitude_old && longitude_old != 0)){
+            tv_nothingToPlot.setVisibility(TextView.INVISIBLE);
+
             GlobalPosition firstPosition = new GlobalPosition(latitude_old, longitude_old, altitude_old);
             GlobalPosition secondPosition = new GlobalPosition(latitude, longitude, altitude);
 
@@ -59,11 +72,28 @@ public class DrawLatAndLon extends AppCompatActivity {
             double angle = filter.coordinateAngleBetweenTwoPoints(firstPosition, secondPosition);
 
             System.out.println();
+
+            // Berechne auf Basis von Distanz und Winkel die x- und y-Komponente des zweiten Punktes
+            // Formeln:
+            // x = dist. * sin(angle)
+            // y = dist. * cos(angle)
+
+            double xComponent = distance * Math.sin(angle);
+            double yComponent = distance * Math.cos(angle);
+
+            // Setze die entsprechenden Variablen in DraView, um sie zeichnen zu können
+            drawView.setxComponentOfSecondPosition(xComponent);
+            drawView.setyComponentOfSecondPosition(yComponent);
+
+            // zeichnen
+            setContentView(drawView);
         }
 
-        // zeichnen
-        setContentView(drawView);
+        else{
+            tv_nothingToPlot.setVisibility(TextView.VISIBLE);
 
+            tv_nothingToPlot.setText("Nothing to Plot");
+        }
     }
 
     /**
@@ -78,5 +108,23 @@ public class DrawLatAndLon extends AppCompatActivity {
         latitude = extras.getDouble("latitude");
         longitude = extras.getDouble("longitude");
         altitude = extras.getDouble("altitude");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d("LH", "In DrawLatAndLon, onPause!");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d("LH", "In DrawLatAndLon, onResume!");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d("LH", "In DrawLatAndLon, onDestroy!");
     }
 }
