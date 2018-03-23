@@ -26,10 +26,6 @@ public class DrawView extends View {
     private int heightOfScreen = 0;
     private int widthOfScreen = 0;
 
-    private static double latitude;
-    private static double longitude;
-    private static double altitude;
-
     private static ArrayList<Pair> listOfOldPoints = new ArrayList<>();
 
     private ArrayList<ArrayList<Double>> listOfPoints = new ArrayList<>();
@@ -64,7 +60,6 @@ public class DrawView extends View {
     @Override
     public void onDraw(Canvas canvas) {
         Log.d("LH", "in DrawView, onDraw");
-
 
         // für den zoom: beginn
         super.onDraw(canvas);
@@ -150,9 +145,6 @@ public class DrawView extends View {
 
 
         final int action = MotionEventCompat.getActionMasked(ev);
-
-
-
 
         switch (action) {
             case MotionEvent.ACTION_DOWN: {
@@ -273,11 +265,6 @@ public class DrawView extends View {
             //canvas.drawText("( " + pixel_x + " ; " + pixel_y + " )",pixel_x + 10,pixel_y -4, paint);
 
             tempList.add(new Pair(pixel_x,pixel_y));
-
-            //checkIfComponentsOfCurrentPointInsideTempList(new Pair(pixel_x,pixel_y));
-            //checkIfComponentsOfCurrentPointInsideTempList(currentPoint);
-            //listOfOldPoints.add(currentPoint);
-            //listOfOldPoints.add(new Pair(pixel_x, pixel_y));
         }
 
     }
@@ -311,17 +298,6 @@ public class DrawView extends View {
         }
 
         return new Pair(max_x, max_y);
-
-
-        //speichere anzahl der axen-steps
-        //setze nullpoint
-        //setze initPoint auf nullposition und hinterlege originalcoordinaten des punktes für die verschiebung der anderen Punkte
-        /*berechne koordinaten von jedem punkt mit der Formel:
-                x = (breite * betrag(A_x - B_x) / steps_x)
-                x = A_x > B_x ? breite - x : x;
-
-                genau so für y
-        */
 
     }
 
@@ -444,39 +420,11 @@ public class DrawView extends View {
         this.widthOfScreen = widthOfScreen - 100;
     }
 
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
-    }
-
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
-    }
-
-    public double getLatitude() {
-        return latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
-    public void setAltitude(double altitude) {
-        this.altitude = altitude;
-    }
-
-    public double getAltitude() {
-        return altitude;
-    }
-
     public ArrayList<ArrayList<Double>> getListOfPoints() {
         return listOfPoints;
     }
 
     public static ArrayList<Pair> getListOfOldPoints() {
         return listOfOldPoints;
-    }
-
-    public static ArrayList<Pair> getTempList() {
-        return tempList;
     }
 }
