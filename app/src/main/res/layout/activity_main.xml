@@ -175,8 +175,25 @@
             android:layout_above="@+id/btn_plotLocation"
             android:layout_alignEnd="@+id/btn_toCoordinateScreen"
             android:layout_alignStart="@+id/btn_toCoordinateScreen"
-            android:layout_marginBottom="17dp"
             android:onClick="inMainActivityOnButtonClick"
             android:text="Reset velocity" />
+
+        <Button
+            android:id="@+id/btn_generateTestGNSS"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/btn_resetVelocity"
+            android:onClick="inMainActivityOnButtonClick"
+            android:text="Generate Test GNSS" />
+
+        <Button
+            android:id="@+id/btn_startGNSSListener"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/btn_resetVelocity"
+            android:layout_alignStart="@+id/tv_outputVelocity_Y"
+            android:onClick="inMainActivityOnButtonClick"
+            android:text="Start GNSS-List" />
+
 </RelativeLayout>
 <!--</android.support.constraint.ConstraintLayout>-->
