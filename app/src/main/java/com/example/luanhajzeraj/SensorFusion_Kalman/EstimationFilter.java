@@ -1,21 +1,8 @@
-package model;
-
-
-import org.apache.commons.math3.filter.DefaultMeasurementModel;
-import org.apache.commons.math3.filter.DefaultProcessModel;
-import org.apache.commons.math3.filter.KalmanFilter;
-import org.apache.commons.math3.filter.MeasurementModel;
-import org.apache.commons.math3.filter.ProcessModel;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.BlockRealMatrix;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
+package com.example.luanhajzeraj.SensorFusion_Kalman;
 
 import geodesy.Ellipsoid;
 import geodesy.GeodeticCalculator;
 import geodesy.GeodeticMeasurement;
-import geodesy.GlobalCoordinates;
 import geodesy.GlobalPosition;
 
 
@@ -26,37 +13,25 @@ import geodesy.GlobalPosition;
 //Nutzung von einem thread-gesicherten singelton-pattern
 public class EstimationFilter {
     private static EstimationFilter instance;
-
-    private double latitude;
-    private double longitude;
-    private double altitude;
-
-    private float linAccel_x;
-    private float linAccel_y;
-
     // Initial Geschwindigkeit in die Richtungen x,y
-    private float[] init_linVeloc = {0,0};
-
-
-    private float[] linVeloc = new float[2];
-
-    private ProcessModel pm;
-    private MeasurementModel mm;
-    private KalmanFilter kf;
-    private RealVector u;
-    private RealVector x;
-    private RealMatrix A;
-    private RealMatrix B;
-    private RealMatrix H;
-    private RealMatrix Q;
-    private RealMatrix R;
+    private float[] linVeloc = new float[]{0,0};
 
     private EstimationFilter(){
-        initFilter();
+//        initFilter();
     }
 
     // Initialisiere den Kalman-Filter
-    private void initFilter(){
+  /*  private void initFilter(){
+        ProcessModel pm;
+        MeasurementModel mm;
+        KalmanFilter kf;
+        RealVector u;
+        RealVector x;
+        RealMatrix A;
+        RealMatrix B;
+        RealMatrix H;
+        RealMatrix Q;
+        RealMatrix R;
         // discrete time interval
         double dt = 0.1d;
         // position measurement noise (meter)
@@ -131,7 +106,7 @@ public class EstimationFilter {
         mm = new DefaultMeasurementModel(H,R);
         kf = new KalmanFilter(pm,mm);
 
-    }
+    }*/
 
     public static synchronized EstimationFilter getInstance(){
         if(instance == null){
@@ -141,42 +116,11 @@ public class EstimationFilter {
     }
 
     // Berechnung der Geschwindigkeit, auf Basis der jeweilligen Beschleunigung (linear)
-    private void calculateLinearVelocity(float accelerometer_x, float accelerometer_y) {
-        // Zeitänderung = 1 sek
-        float dt =  0.1f;
-
+    public void calculateLinearVelocity(float accelerometer_x, float accelerometer_y, float dt) {
         // Geschwindigkeit berechnen
         // Berechnung von linearer Geschwindigkeit, siehe wikipedia: "Gleichmässig beschleunigte Bew."
-        linVeloc[0] = init_linVeloc[0] + (accelerometer_x * dt);
-        linVeloc[1] = init_linVeloc[1] + (accelerometer_y * dt);
-
-        // Neue "Ausgangsgeschwindigkeit" setzen
-        init_linVeloc[0] = linVeloc[0];
-        init_linVeloc[1] = linVeloc[1];
-    }
-
-    public void setLinAccelerometerValues(float x, float y){
-        this.linAccel_x = x;
-        this.linAccel_y = y;
-
-        calculateLinearVelocity(linAccel_x,linAccel_y);
-    }
-
-    public void setPositionValues(double latitude, double longitude, double altitude){
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.altitude = altitude;
-    }
-
-    public float[] getLinVeloc() {
-        return linVeloc;
-    }
-
-    public GlobalPosition calculateCoordinatesOnLatLon(double lat, double lon, double alt){
-        if(lat != 0 && lon != 0){
-            return new GlobalPosition(lat,lon, alt);
-        }
-        return null;
+        linVeloc[0] = linVeloc[0] + (accelerometer_x * dt);
+        linVeloc[1] = linVeloc[1] + (accelerometer_y * dt);
     }
 
     public double coordinateDistanceBetweenTwoPoints(GlobalPosition g1, GlobalPosition g2){
@@ -187,6 +131,7 @@ public class EstimationFilter {
                     .calculateGeodeticMeasurement(Ellipsoid.WGS84, g1, g2);
 
             return gm.getEllipsoidalDistance();
+//           return geodeticCalculator.calculateGeodeticCurve(Ellipsoid.WGS84, g1,g2).getEllipsoidalDistance();
         }
         return 0;
     }
@@ -199,27 +144,16 @@ public class EstimationFilter {
                     .calculateGeodeticMeasurement(Ellipsoid.WGS84, g1, g2);
 
             return gm.getAzimuth();
+//            return geodeticCalculator.calculateGeodeticCurve(Ellipsoid.WGS84, g1,g2).getAzimuth();
         }
         return 0;
-    }
-
-    public double getLatitude() {
-        return latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
-    public double getAltitude() {
-        return altitude;
     }
 
     public void setLinVeloc(float[] linVeloc) {
         this.linVeloc = linVeloc;
     }
 
-    public void setInit_linVeloc(float[] init_linVeloc) {
-        this.init_linVeloc = init_linVeloc;
+    public float[] getLinVeloc() {
+        return linVeloc;
     }
 }
