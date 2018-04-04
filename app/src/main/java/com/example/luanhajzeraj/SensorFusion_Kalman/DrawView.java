@@ -31,6 +31,7 @@ public class DrawView extends View {
         // zum zoomen
         scaleGestureDetector = new ScaleGestureDetector(context, new ScaleListener());
         init();
+
     }
 
     private void init() {
@@ -168,13 +169,16 @@ public class DrawView extends View {
         return true;
     }
 
-
     private void calculateCoordinatesOfPoints(Canvas canvas, Pair pixelPerAxes) {
         List<Pair> listOfPoints = Service.getListOfPoints();
         List<Pair> listOfOldPoints = Service.getListOfOldPoints();
 
-        Pair initialPoint = new Pair(listOfPoints.get(0).getX(), listOfPoints.get(0).getY());
+        //Pair initialPoint = new Pair(listOfPoints.get(0).getX(), listOfPoints.get(0).getY());
 
+        // Der initialPoint ist der allererste, berechnete Punkt (auf Basis der firstGlobalPosition).
+        // Es kann NICHT die firstGlobalPosition selbst sein, da diese eben eine Position ist und
+        // keine x- & y-Koordinaten hat!
+        Pair initialPoint = Service.getInitialPoint();
         paint2.setColor(Color.BLUE);
 
         // Zeichne zunächst die alten Punkte und anschließend die neuen

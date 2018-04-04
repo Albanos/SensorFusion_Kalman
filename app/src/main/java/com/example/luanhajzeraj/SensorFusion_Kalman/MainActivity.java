@@ -119,7 +119,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         };
 
         //Setze Listener bei Abweichung von einem Meter, innerhalb von 5 sek
-        lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_TIME_LOCATION, 1, locationListener);
+        //lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_TIME_LOCATION, 1, locationListener);
+        lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_TIME_LOCATION, 0, locationListener);
     }
 
     private void createGlobalPositionForDrawLatAndLon(double latitude, double longitude, double altitude) {
@@ -261,24 +262,42 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
 
         // Im Test-Modus: Setze breite und länge wie statisch gesetzt, im Test-Modus
-        else if (view.getId() == R.id.btn_generateTestGNSS) {
+        else if(view.getId() == R.id.btn_generateTestGNSS) {
+            // Koordinaten:
+            // Der erste Punkt ist vor der Uni; der zweite, dritte und vierte rechts daneben
+            // (In Richtung osten), jeweills mit 5m, 10m und 15m vom ersten Punkt entfernt
+            // der letzte, fünfte Punkt befindet sich in 180 grad unter Punkt 1, 10m Abstand
 
-            // Länge, Breite und Höhe stammen aus Google-Maps:
-            // Sie stehen für 4 Pkte, vor der Uni, beginnend am Ausgang des Uni-Geländes (Bereich C)
-            // nach rechts, in Richtung stadt
-
-            double[] coords = getDemoCoordinates();
-            latitude = coords[0];
-            longitude = coords[1];
+            latitude = new double[]{51.311996,51.311991,51.312006,51.312000,51.311902}[demoGNSSCounter];
+            longitude = new double[]{9.473645,9.473719,9.473798,9.473864,9.473643}[demoGNSSCounter];
             altitude = 211;
-//            if (++demoGNSSCounter > 8) {
-//                // Wenn counter größer als 3: mache den Button unsichtbar, also nicht drückbar
-//                findViewById(R.id.btn_generateTestGNSS).setVisibility(View.INVISIBLE);
-//            }
-//            filter.setPositionValues(latitude, longitude, altitude);
+
+            if(++demoGNSSCounter > 4){
+                // Wenn counter größer als 3: mache den Button unsichtbar, also nicht drückbar
+                findViewById(R.id.btn_generateTestGNSS).setVisibility(View.INVISIBLE);
+            }
+
             createGlobalPositionForDrawLatAndLon(latitude, longitude, altitude);
             writeGPSValuesToScreen(latitude, longitude, altitude);
         }
+//        else if (view.getId() == R.id.btn_generateTestGNSS) {
+//
+//            // Länge, Breite und Höhe stammen aus Google-Maps:
+//            // Sie stehen für 4 Pkte, vor der Uni, beginnend am Ausgang des Uni-Geländes (Bereich C)
+//            // nach rechts, in Richtung stadt
+//
+//            double[] coords = getDemoCoordinates();
+//            latitude = coords[0];
+//            longitude = coords[1];
+//            altitude = 211;
+////            if (++demoGNSSCounter > 8) {
+////                // Wenn counter größer als 3: mache den Button unsichtbar, also nicht drückbar
+////                findViewById(R.id.btn_generateTestGNSS).setVisibility(View.INVISIBLE);
+////            }
+////            filter.setPositionValues(latitude, longitude, altitude);
+//            createGlobalPositionForDrawLatAndLon(latitude, longitude, altitude);
+//            writeGPSValuesToScreen(latitude, longitude, altitude);
+//        }
 
         // STarte den GNSS-Listener, also mit live-Daten
         else if (view.getId() == R.id.btn_startGNSSListener) {

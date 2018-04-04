@@ -159,12 +159,12 @@
 
         <Button
             android:id="@+id/btn_toCoordinateScreen"
-            android:layout_width="wrap_content"
+            android:layout_width="166dp"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_alignParentEnd="true"
             android:onClick="inMainActivityOnButtonClick"
-            android:text="to CoordinateScreen" />
+            android:text="Draw Lat and Lon" />
 
         <Button
             android:id="@+id/btn_resetVelocity"
@@ -210,9 +210,8 @@
             android:layout_alignBottom="@+id/textView4"
             android:layout_alignEnd="@+id/tv_outputLongitudeSystem"
             android:layout_alignStart="@+id/tv_outputLongitudeSystem"
-            android:text="TextView"
-            android:textSize="18sp"
-            tools:text="..." />
+            android:text="..."
+            android:textSize="18sp" />
 
 </RelativeLayout>
 <!--</android.support.constraint.ConstraintLayout>-->
