@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private LocationListener locationListener;
     private SensorManager sensorManager;
     private EstimationFilter filter = EstimationFilter.getInstance();
-    // Update-Zeit: 2s
+    // Update-Zeit: 1s
     private final int UPDATE_TIME_LOCATION = 1000;
     private final int PERMISSION_REQUEST = 0;
     private static int demoGNSSCounter = 0;
@@ -64,29 +64,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         registerLinAccelerometerListener();
     }
-
-//    private void getLocationAndRegisterGnssListener() {
-//        lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-//        //Frage bei Änderung von 1m alle 5sek ab -->MERKE: kann auch null zurück liefern!!!
-//        registerGPSListener();
-//        //Prüfe, ob GPS aktiviert ist. Agiere nur dann, sonst Toast ausgeben
-//        if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-//            @SuppressLint("MissingPermission")
-//            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-//            if (location != null) {
-//                latitude = location.getLatitude();
-//                longitude = location.getLongitude();
-//                altitude = location.getAltitude();
-//
-//                createGlobalPositionForDrawLatAndLon(latitude, longitude, altitude);
-////                filter.setPositionValues(latitude, longitude, altitude);
-//                writeGPSValuesToScreen(latitude, longitude, altitude);
-//            }
-//        } else {
-//            Toast.makeText(this, "GPS is not avaiable! Activate GPS on the device and restart the application", Toast.LENGTH_LONG).show();
-//            finish();
-//        }
-//    }
 
     @SuppressLint("MissingPermission")
     private void registerGPSListener() {
@@ -119,8 +96,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         };
 
-        //Setze Listener bei Abweichung von einem Meter, innerhalb von 5 sek
-        //lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_TIME_LOCATION, 1, locationListener);
+        //Setze Listener bei Abweichung von 0 Meter, innerhalb von 1 sek
         lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_TIME_LOCATION, 0, locationListener);
     }
 
@@ -244,15 +220,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             String geoUri = "http://maps.google.com/maps?q=loc:" + latitude + "," + longitude + " (TADA!)";
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(geoUri));
             this.startActivity(intent);
-        }
-
-        // Gebe Länge, Breite und Höhe an den Screen via intent weiter
-        else if (view.getId() == R.id.btn_toCoordinateScreen) {
-            Intent intent = new Intent(MainActivity.this, DrawLatAndLonActivity.class);
-            intent.putExtra("latitude", latitude);
-            intent.putExtra("longitude", longitude);
-            intent.putExtra("altitude", altitude);
-            startActivity(intent);
+        } else if (view.getId() == R.id.btn_toCoordinateScreen) {
+            // Starte den Screen zum zeichnen der Breiten & Längengrade
+            startActivity(new Intent(MainActivity.this, DrawLatAndLonActivity.class));
         }
 
         // Setze die Geschwindigkeit in x- und y-Richtung zurück
@@ -267,8 +237,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         else if (view.getId() == R.id.btn_generateTestGNSS) {
             // Koordinaten:
             // Der erste Punkt ist vor der Uni; der zweite, dritte und vierte rechts daneben
-            // (In Richtung osten), jeweills mit 5m, 10m und 15m vom ersten Punkt entfernt
-            // der letzte, fünfte Punkt befindet sich in 180 grad unter Punkt 1, 10m Abstand
+            // (In Richtung osten ; Rathaus), jeweills mit 5m, 10m und 15m vom ersten Punkt entfernt
+            // der letzte, fünfte Punkt, befindet sich in 180 grad unter Punkt 1, 10m Abstand
 
             latitude = new double[]{51.311996, 51.311991, 51.312006, 51.312000, 51.311902}[demoGNSSCounter];
             longitude = new double[]{9.473645, 9.473719, 9.473798, 9.473864, 9.473643}[demoGNSSCounter];
@@ -282,26 +252,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             createGlobalPositionForDrawLatAndLon(latitude, longitude, altitude);
             writeGPSValuesToScreen(latitude, longitude, altitude);
         }
-//        else if (view.getId() == R.id.btn_generateTestGNSS) {
-//
-//            // Länge, Breite und Höhe stammen aus Google-Maps:
-//            // Sie stehen für 4 Pkte, vor der Uni, beginnend am Ausgang des Uni-Geländes (Bereich C)
-//            // nach rechts, in Richtung stadt
-//
-//            double[] coords = getDemoCoordinates();
-//            latitude = coords[0];
-//            longitude = coords[1];
-//            altitude = 211;
-////            if (++demoGNSSCounter > 8) {
-////                // Wenn counter größer als 3: mache den Button unsichtbar, also nicht drückbar
-////                findViewById(R.id.btn_generateTestGNSS).setVisibility(View.INVISIBLE);
-////            }
-////            filter.setPositionValues(latitude, longitude, altitude);
-//            createGlobalPositionForDrawLatAndLon(latitude, longitude, altitude);
-//            writeGPSValuesToScreen(latitude, longitude, altitude);
-//        }
 
-        // STarte den GNSS-Listener, also mit live-Daten
+        // Starte den GNSS-Listener, also mit live-Daten
         else if (view.getId() == R.id.btn_startGNSSListener) {
             //getLocationAndRegisterGnssListener();
             registerGPSListener();

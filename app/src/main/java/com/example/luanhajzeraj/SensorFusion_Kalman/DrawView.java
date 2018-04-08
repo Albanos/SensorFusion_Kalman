@@ -9,8 +9,10 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import model.Pair;
@@ -22,9 +24,12 @@ public class DrawView extends View {
     private static Paint paint2 = new Paint();
     private int heightOfScreen = 0;
     private int widthOfScreen = 0;
-
     private ScaleGestureDetector scaleGestureDetector;
     private float scaleFactor = 1.f;
+    // Dateikonfiguration für das Schreiben der Koordinaten in eine Datei
+    private File path = this.getContext().getExternalFilesDir(null);
+    private File file = new File(path,"coordinatesOnScreen.txt");
+    private FileOutputStream stream;
 
     public DrawView(Context context) {
         super(context);
@@ -72,7 +77,12 @@ public class DrawView extends View {
         canvas.drawLine(0, (heightOfScreen + 100) / 2, widthOfScreen + 100, (heightOfScreen + 100) / 2, paint);
 
         // Berechne die neuen Koordinaten anhand von besprochener Formel und zeichne
-        calculateCoordinatesOfPoints(canvas, pixelPerStep);
+        // Das try-catch ist für die Eintragung der Koordinaten in eine Datei
+        try {
+            calculateCoordinatesOfPoints(canvas, pixelPerStep);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         // zum zoomen: ende
         canvas.restore();
@@ -169,7 +179,7 @@ public class DrawView extends View {
         return true;
     }
 
-    private void calculateCoordinatesOfPoints(Canvas canvas, Pair pixelPerAxes) {
+    private void calculateCoordinatesOfPoints(Canvas canvas, Pair pixelPerAxes) throws IOException {
         List<Pair> listOfPoints = Service.getListOfPoints();
         List<Pair> listOfOldPoints = Service.getListOfOldPoints();
 
@@ -221,7 +231,6 @@ public class DrawView extends View {
 //            pixel_y = currentPoint.getY() < initialPoint.getY() ? pixel_y + (heightOfScreen / 2) : pixel_y;
             pixel_y += 50;
 
-
             paint.setColor(Color.BLACK);
             canvas.drawCircle(pixel_x, pixel_y, 15, paint);
 
@@ -229,11 +238,29 @@ public class DrawView extends View {
             paint.setTextSize(28);
             Log.d("DRAW_POINTS", "drawing new point: " + pixel_x + ";" + pixel_y +
                     " coordinate: " + currentPoint.getX() + ";" + currentPoint.getY());
-//            canvas.drawText("( " + currentPoint.getX() + " ; " + currentPoint.getY()+ " )",pixel_x + 10,pixel_y -4, paint);
 
             canvas.drawText("" + i,pixel_x +12, pixel_y -2,paint);
-        }
 
+            stream = stream == null ? new FileOutputStream(file) : stream;
+            writeCoordinatesToFile(currentPoint,i, stream);
+
+        }
+        // Schließe den stream nach dem kompletten zeichnen ab: trenne punkte und schließe ihn
+        stream.write("==========================".getBytes());
+        stream.close();
+    }
+
+    private void writeCoordinatesToFile(Pair currentPoint, int counterForCoordinates, FileOutputStream stream) {
+
+        double x = currentPoint.getX();
+        double y = currentPoint.getY();
+        String toWrite = "P" + counterForCoordinates + ": (" + x + " ; " + y + ")\n";
+
+        try {
+            stream.write(toWrite.getBytes());
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private Pair calculateMaxDistanceToInitialPoint() {

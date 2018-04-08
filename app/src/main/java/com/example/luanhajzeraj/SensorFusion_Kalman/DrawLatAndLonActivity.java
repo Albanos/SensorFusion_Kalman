@@ -7,10 +7,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import java.util.List;
-
-import model.Pair;
-
 public class DrawLatAndLonActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
