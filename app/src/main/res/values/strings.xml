@@ -8,6 +8,6 @@
     <string name="tf_Name_Veloc_X">Velocity_X</string>
     <string name="tf_Name_Veloc_Y">Velocity_Y</string>
     <string name="tf_Name_Altitude">Altitude</string>
-
+    <string name="tf_Name_Speed">Velocity (GNSS)</string>
     <string name="action_settings">Settings</string>
 </resources>

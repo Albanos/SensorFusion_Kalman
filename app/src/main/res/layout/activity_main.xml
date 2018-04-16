@@ -20,9 +20,9 @@
             android:id="@+id/tv_nameAccelerometerX"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignStart="@+id/tv_nameLongitudeSystem"
-            android:layout_below="@+id/tv_nameLongitudeSystem"
-            android:layout_marginTop="54dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignStart="@+id/tv_nameLatitudeSystem"
+            android:layout_marginTop="171dp"
             android:text="@string/tf_Name_Accel_X"
             android:textSize="18sp"
             tools:layout_editor_absoluteX="0dp"
@@ -210,6 +210,25 @@
             android:layout_alignBottom="@+id/textView4"
             android:layout_alignEnd="@+id/tv_outputLongitudeSystem"
             android:layout_alignStart="@+id/tv_outputLongitudeSystem"
+            android:text="..."
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/textView3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignStart="@+id/tv_nameAccelerometerX"
+            android:layout_marginTop="133dp"
+            android:text="@string/tf_Name_Speed"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tv_outputSpeed"
+            android:layout_width="155dp"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/tv_outputLatitudeSystem"
+            android:layout_alignTop="@+id/textView3"
             android:text="..."
             android:textSize="18sp" />
 

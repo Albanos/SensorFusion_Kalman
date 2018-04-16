@@ -28,6 +28,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private double latitude;
     private double longitude;
     private double altitude;
+    private float speed;
     private float[] velocity = {0, 0};
     private LocationManager lm;
     private LocationListener locationListener;
@@ -35,6 +36,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private EstimationFilter filter = EstimationFilter.getInstance();
     // Update-Zeit: 1s
     private final int UPDATE_TIME_LOCATION = 1000;
+    // Minimale Distanz der Änderung: null meter
+    private final int UPDATE_MIN_DISTANCE = 0;
+
     private final int PERMISSION_REQUEST = 0;
     private static int demoGNSSCounter = 0;
     private static long oldTimestamp = 0;
@@ -75,9 +79,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 latitude = location.getLatitude();
                 altitude = location.getAltitude();
 
-//                filter.setPositionValues(latitude, longitude, altitude);
+                // Als Geschwindigkeit wird zunächst die GNSS-Geschwindigkeit genutzt (in m/s)
+                speed = location.hasSpeed() ? location.getSpeed() : -1;
+
                 createGlobalPositionForDrawLatAndLon(latitude, longitude, altitude);
-                writeGPSValuesToScreen(latitude, longitude, altitude);
+                writeGPSValuesToScreen(latitude, longitude, altitude, speed);
                 Log.d("LH", "GPS-Update");
             }
 
@@ -97,15 +103,28 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         };
 
         //Setze Listener bei Abweichung von 0 Meter, innerhalb von 1 sek
-        lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_TIME_LOCATION, 0, locationListener);
+        lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_TIME_LOCATION, UPDATE_MIN_DISTANCE, locationListener);
     }
 
+    /**
+     * Erzeuge für Länge, Breite & Höhe GlobalPositions und speichere Sie im Service (wichtig für
+     * das zeichnen der Koordinaten in der Ebene)
+     * @param latitude
+     * @param longitude
+     * @param altitude
+     */
     private void createGlobalPositionForDrawLatAndLon(double latitude, double longitude, double altitude) {
         GlobalPosition globalPosition = new GlobalPosition(latitude, longitude, altitude);
         Service.getListOfPositions().add(globalPosition);
         Service.setFirstGlobalPositionOfList(globalPosition);
     }
 
+    /**
+     * Frage die notwendigen Zugrifsrechte des Mobil-telefons ab
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
@@ -130,7 +149,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
-    private void writeGPSValuesToScreen(double latitude, double longitude, double altitude) {
+    private void writeGPSValuesToScreen(double latitude, double longitude, double altitude, float speed) {
         TextView output_latitudeSystem = findViewById(R.id.tv_outputLatitudeSystem);
         output_latitudeSystem.setText(Double.toString(latitude));
 
@@ -139,28 +158,52 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         TextView output_altitude = findViewById(R.id.tv_outputAltitude);
         output_altitude.setText(Double.toString(altitude));
+
+        TextView output_speed = findViewById(R.id.tv_outputSpeed);
+
+        // Setze Text, falls Geschwindigkeit nicht vorliegen sollte
+        if(speed == -1){
+            output_speed.setText("Speed not aviable");
+        }
+        else{
+            output_speed.setText(Float.toString(speed));
+        }
     }
 
     private void registerLinAccelerometerListener() {
         sensorManager.registerListener(this,
                 sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION),
-                SensorManager.SENSOR_DELAY_UI);
+                SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
+
     }
 
+    /**
+     * Berechne die Geschwindigkeit aus der Linearen Beschleunigung heraus. Großes Problem ist
+     * hier das Sensorrauschen, was für starke Sprünge in der Geschwindigkeitsberechnung sorgt...
+     *
+     * @param event
+     */
     @Override
     public void onSensorChanged(SensorEvent event) {
 
         if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
+            // Berechne dt, mit berücksichtigung der Größen: timestamp sind nanosekunden!
+            // Umrechnung ergibt eine zeitliche änderung in sekunden
             float dT = oldTimestamp == 0 ? 0.1f : (event.timestamp - oldTimestamp) / 1000000000.0f;
             oldTimestamp = event.timestamp;
 
             float linAccelerometer_x = event.values[0];
-            float linAccelerometer_y = event.values[1];
+            //float linAccelerometer_y = event.values[1];
+
+            // Wenn die Bildschirmaxen relativ zum gerät sind (laut developer-seite),
+            // muss die z-Axe verwendet werden. Die Ache zeigt aus dem Bildschirm heraus, deshalb
+            // kehren wir die Richtung mit *-1 um
+            float linAccelerometer_y = event.values[2];
             writeAccelerometerValuesToScreen(linAccelerometer_x, linAccelerometer_y);
 
-            // Reiche Werte an Filter weiter
-            filter.calculateLinearVelocity(linAccelerometer_x, linAccelerometer_y, dT);
-            velocity = filter.getLinVeloc();
+            // Berechne auf Basis der Lin.-Beschleunigung die lineare Geschwindigkeit
+            Service.calculateLinearVelocity(linAccelerometer_x, linAccelerometer_y, dT);
+            velocity = Service.getLinVeloc();
             writeVelocityValuesToScreen(velocity[0], velocity[1]);
         }
     }
@@ -201,7 +244,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onResume() {
         super.onResume();
         if (lm != null) {
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_TIME_LOCATION, 1, locationListener);
+            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_TIME_LOCATION, UPDATE_MIN_DISTANCE, locationListener);
             Log.d("LH", "In MainActivity, onResume!");
             Log.d("LH", "LocationListener reaktiviert");
         }
@@ -214,6 +257,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Log.d("LH", "in MainActivity, onDestroy");
     }
 
+    /**
+     * Handelt alle "Button-Aktivitäten" in der Main-Activity
+     * @param view
+     */
     public void inMainActivityOnButtonClick(View view) {
         // Plote Länge und Breite in Google-Maps
         if (view.getId() == R.id.btn_plotLocation) {
@@ -229,7 +276,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         else if (view.getId() == R.id.btn_resetVelocity) {
             velocity[0] = 0.0f;
             velocity[1] = 0.0f;
-            filter.setLinVeloc(velocity);
+
+            //filter.setLinVeloc(velocity);
+            Service.setLinVeloc(velocity);
             writeVelocityValuesToScreen(velocity[0], velocity[1]);
         }
 
@@ -243,6 +292,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             latitude = new double[]{51.311996, 51.311991, 51.312006, 51.312000, 51.311902}[demoGNSSCounter];
             longitude = new double[]{9.473645, 9.473719, 9.473798, 9.473864, 9.473643}[demoGNSSCounter];
             altitude = 211;
+            speed = 0f;
 
             if (++demoGNSSCounter > 4) {
                 // Wenn counter größer als 3: mache den Button unsichtbar, also nicht drückbar
@@ -250,7 +300,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
 
             createGlobalPositionForDrawLatAndLon(latitude, longitude, altitude);
-            writeGPSValuesToScreen(latitude, longitude, altitude);
+            writeGPSValuesToScreen(latitude, longitude, altitude, speed);
         }
 
         // Starte den GNSS-Listener, also mit live-Daten

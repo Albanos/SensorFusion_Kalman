@@ -1,10 +1,5 @@
 package com.example.luanhajzeraj.SensorFusion_Kalman;
 
-import geodesy.Ellipsoid;
-import geodesy.GeodeticCalculator;
-import geodesy.GeodeticMeasurement;
-import geodesy.GlobalPosition;
-
 
 /**
  * Created by Luan Hajzeraj on 13.01.2018.
@@ -14,7 +9,7 @@ import geodesy.GlobalPosition;
 public class EstimationFilter {
     private static EstimationFilter instance;
     // Initial Geschwindigkeit in die Richtungen x,y
-    private float[] linVeloc = new float[]{0,0};
+
 
     private EstimationFilter(){
 //        initFilter();
@@ -113,47 +108,5 @@ public class EstimationFilter {
             instance = new EstimationFilter();
         }
         return instance;
-    }
-
-    // Berechnung der Geschwindigkeit, auf Basis der jeweilligen Beschleunigung (linear)
-    public void calculateLinearVelocity(float accelerometer_x, float accelerometer_y, float dt) {
-        // Geschwindigkeit berechnen
-        // Berechnung von linearer Geschwindigkeit, siehe wikipedia: "Gleichmässig beschleunigte Bew."
-        linVeloc[0] = linVeloc[0] + (accelerometer_x * dt);
-        linVeloc[1] = linVeloc[1] + (accelerometer_y * dt);
-    }
-
-    public double coordinateDistanceBetweenTwoPoints(GlobalPosition g1, GlobalPosition g2){
-        if(g1 != null && g2 != null){
-            GeodeticCalculator geodeticCalculator = new GeodeticCalculator();
-
-            GeodeticMeasurement gm = geodeticCalculator
-                    .calculateGeodeticMeasurement(Ellipsoid.WGS84, g1, g2);
-
-            return gm.getEllipsoidalDistance();
-//           return geodeticCalculator.calculateGeodeticCurve(Ellipsoid.WGS84, g1,g2).getEllipsoidalDistance();
-        }
-        return 0;
-    }
-
-    public double coordinateAngleBetweenTwoPoints(GlobalPosition g1, GlobalPosition g2){
-        if(g1 != null && g2 != null){
-            GeodeticCalculator geodeticCalculator = new GeodeticCalculator();
-
-            GeodeticMeasurement gm = geodeticCalculator
-                    .calculateGeodeticMeasurement(Ellipsoid.WGS84, g1, g2);
-
-            return gm.getAzimuth();
-//            return geodeticCalculator.calculateGeodeticCurve(Ellipsoid.WGS84, g1,g2).getAzimuth();
-        }
-        return 0;
-    }
-
-    public void setLinVeloc(float[] linVeloc) {
-        this.linVeloc = linVeloc;
-    }
-
-    public float[] getLinVeloc() {
-        return linVeloc;
     }
 }

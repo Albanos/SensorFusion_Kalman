@@ -9,9 +9,15 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,10 +32,10 @@ public class DrawView extends View {
     private int widthOfScreen = 0;
     private ScaleGestureDetector scaleGestureDetector;
     private float scaleFactor = 1.f;
+
     // Dateikonfiguration für das Schreiben der Koordinaten in eine Datei
-    private File path = this.getContext().getExternalFilesDir(null);
-    private File file = new File(path,"coordinatesOnScreen.txt");
-    private FileOutputStream stream;
+    private static File file = null;
+    private FileOutputStream stream = null;
 
     public DrawView(Context context) {
         super(context);
@@ -78,11 +84,13 @@ public class DrawView extends View {
 
         // Berechne die neuen Koordinaten anhand von besprochener Formel und zeichne
         // Das try-catch ist für die Eintragung der Koordinaten in eine Datei
+
         try {
             calculateCoordinatesOfPoints(canvas, pixelPerStep);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
 
         // zum zoomen: ende
         canvas.restore();
@@ -239,28 +247,87 @@ public class DrawView extends View {
             Log.d("DRAW_POINTS", "drawing new point: " + pixel_x + ";" + pixel_y +
                     " coordinate: " + currentPoint.getX() + ";" + currentPoint.getY());
 
-            canvas.drawText("" + i,pixel_x +12, pixel_y -2,paint);
+            canvas.drawText("" + i, pixel_x + 12, pixel_y - 2, paint);
 
-            stream = stream == null ? new FileOutputStream(file) : stream;
-            writeCoordinatesToFile(currentPoint,i, stream);
-
+            // Schreibe die geodesy-Koordinaten in eine Datei
+            //writeCoordinatesToFile(currentPoint, i);
         }
-        // Schließe den stream nach dem kompletten zeichnen ab: trenne punkte und schließe ihn
-        stream.write("==========================".getBytes());
-        stream.close();
+        // schließe danach den stream sauber ab
+        //stream.close();
     }
 
-    private void writeCoordinatesToFile(Pair currentPoint, int counterForCoordinates, FileOutputStream stream) {
-
+    private void writeCoordinatesToFile(Pair currentPoint, int counterForCoordinates) throws IOException {
         double x = currentPoint.getX();
         double y = currentPoint.getY();
-        String toWrite = "P" + counterForCoordinates + ": (" + x + " ; " + y + ")\n";
+        String toWrite = "";
+
+        if (file == null) {
+            Log.d("Test", "Pfad:  " + this.getContext().getFilesDir());
+            file = new File(this.getContext().getExternalFilesDir(null), "coordinatesOnScreen.txt");
+            //file = new File(this.getContext().getFilesDir(), "coordinatesOnScreen.txt");
+
+            toWrite = "P" + counterForCoordinates + ": (" + x + " ; " + y + ")\n";
+        } else {
+            String content = readDataFromFile(file.getName());
+            toWrite = content + "\n" + ("P" + counterForCoordinates + ": (" + x + " ; " + y + ")\n");
+        }
+        stream = new FileOutputStream(file);
+        //stream = stream == null ? new FileOutputStream(file) : stream;
+        //stream = stream == null ? this.getContext().openFileOutput("coordinatesOnScreen.txt",Context.MODE_PRIVATE) : stream;
 
         try {
+            //writeDataToFile(stream, toWrite);
+
             stream.write(toWrite.getBytes());
-        }catch (IOException e) {
+            stream.close();
+        } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void writeDataToFile(FileOutputStream stream, String toWrite) {
+        try {
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(stream);
+            BufferedWriter bufferedWriter = new BufferedWriter(outputStreamWriter);
+
+            bufferedWriter.write(toWrite);
+
+            bufferedWriter.flush();
+            bufferedWriter.close();
+            outputStreamWriter.close();
+        } catch (FileNotFoundException ex) {
+            ex.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private String readDataFromFile(String fileName) {
+        try {
+            FileInputStream inputStream = this.getContext().openFileInput(fileName);
+            InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+
+            StringBuilder stringBuilder = new StringBuilder();
+            String oneLine;
+
+            while ((oneLine = bufferedReader.readLine()) != null) {
+                stringBuilder.append(oneLine);
+            }
+
+            bufferedReader.close();
+            inputStream.close();
+            inputStreamReader.close();
+
+            return stringBuilder.toString();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     private Pair calculateMaxDistanceToInitialPoint() {
@@ -288,7 +355,7 @@ public class DrawView extends View {
                 max_x = entry.getX();
             }
         }
-        return new Pair(Math.abs(max_x-min_x), Math.abs(max_y-min_y));
+        return new Pair(Math.abs(max_x - min_x), Math.abs(max_y - min_y));
 //        for (Pair entry : allPoints) {
 //            //find max x and max y distance
 //            double x = entry.getX();
