@@ -199,8 +199,7 @@ public class DrawView extends View {
         Pair initialPoint = Service.getInitialPoint();
         paint2.setColor(Color.BLUE);
 
-        // Zeichne zunächst die alten Punkte und anschließend die neuen
-        Log.d("DRAW_POINTS", "oldPoints: " + listOfOldPoints.size());
+        // Zeichne die alten Punkte
         for (Pair currentPoint : listOfOldPoints) {
             int pixel_x = (int) (Math.abs(currentPoint.getX() - initialPoint.getX()) * pixelPerAxes.getX());
             pixel_x = currentPoint.getX() >= initialPoint.getX() ? pixel_x + (widthOfScreen / 2) : widthOfScreen - pixel_x - (widthOfScreen / 2);
@@ -215,13 +214,10 @@ public class DrawView extends View {
 //            pixel_y = currentPoint.getY() < initialPoint.getY() ? pixel_y + (heightOfScreen / 2) : pixel_y;
             pixel_y += 50;
 
-            Log.d("DRAW_POINTS", "drawing old point: " + pixel_x + ";" + pixel_y +
-                    " coordinate: " + currentPoint.getX() + ";" + currentPoint.getY());
             canvas.drawCircle(pixel_x, pixel_y, 15, paint2);
         }
 
-        Log.d("DRAW_POINTS", "newPoints: " + listOfPoints.size());
-        //for (Pair currentPoint : listOfPoints) {
+        // Zeichne die aktuellen Punkte
         for (int i = 0; i < listOfPoints.size(); i++) {
 
             Pair currentPoint = listOfPoints.get(i);
@@ -243,17 +239,55 @@ public class DrawView extends View {
             canvas.drawCircle(pixel_x, pixel_y, 15, paint);
 
             // Schreibe auch die Koordinaten auf den Screen
-            paint.setTextSize(28);
-            Log.d("DRAW_POINTS", "drawing new point: " + pixel_x + ";" + pixel_y +
-                    " coordinate: " + currentPoint.getX() + ";" + currentPoint.getY());
-
-            canvas.drawText("" + i, pixel_x + 12, pixel_y - 2, paint);
-
-            // Schreibe die geodesy-Koordinaten in eine Datei
-            //writeCoordinatesToFile(currentPoint, i);
+            paint.setTextSize(48);
+            //canvas.drawText("" + i, pixel_x + 12, pixel_y - 2, paint);
         }
-        // schließe danach den stream sauber ab
-        //stream.close();
+
+        // Zeichne die alten, GESCHÄTZTEN Punkte
+        for (Pair currentPoint : Service.getOldEstimatedPoints()) {
+            Paint paint4 = new Paint();
+            paint4.setColor(Color.GREEN);
+            int pixel_x = (int) (Math.abs(currentPoint.getX() - initialPoint.getX()) * pixelPerAxes.getX());
+            pixel_x = currentPoint.getX() >= initialPoint.getX() ? pixel_x + (widthOfScreen / 2) : widthOfScreen - pixel_x - (widthOfScreen / 2);
+            pixel_x = pixel_x + 50;
+
+            int pixel_y = (int) (Math.abs(currentPoint.getY() - initialPoint.getY()) * pixelPerAxes.getY());
+            pixel_y = currentPoint.getY() <= initialPoint.getY() ? pixel_y + (heightOfScreen / 2) : heightOfScreen - pixel_y - (heightOfScreen / 2);
+//            pixel_y = currentPoint.getY() <= initialPoint.getY() ? (heightOfScreen / 2) + pixel_y : pixel_y;
+//            pixel_y = pixel_y + 50;
+            //int pixel_y = (int) ((currentPoint.getY() - initialPoint.getY()) * pixelPerAxes.getY());
+            //pixel_y = (heightOfScreen / 2) + pixel_y + 50;
+//            pixel_y = currentPoint.getY() < initialPoint.getY() ? pixel_y + (heightOfScreen / 2) : pixel_y;
+            pixel_y += 50;
+
+            canvas.drawCircle(pixel_x, pixel_y, 15, paint4);
+        }
+
+        // Zeichne die "neu" geschätzten Punkte
+        if(! Service.getEstimatedPoints().isEmpty()){
+            Paint paint3 = new Paint();
+            paint3.setColor(Color.RED);
+
+            for (int i = 0; i < Service.getEstimatedPoints().size(); i++) {
+
+                Pair currentPoint = Service.getEstimatedPoints().get(i);
+
+                int pixel_x = (int) (Math.abs(currentPoint.getX() - initialPoint.getX()) * pixelPerAxes.getX());
+                pixel_x = currentPoint.getX() >= initialPoint.getX() ? pixel_x + (widthOfScreen / 2) : widthOfScreen - pixel_x - (widthOfScreen / 2);
+                pixel_x = pixel_x + 50;
+
+                int pixel_y = (int) (Math.abs(currentPoint.getY() - initialPoint.getY()) * pixelPerAxes.getY());
+                pixel_y = currentPoint.getY() <= initialPoint.getY() ? pixel_y + (heightOfScreen / 2) : heightOfScreen - pixel_y - (heightOfScreen / 2);
+//            pixel_y = currentPoint.getY() <= initialPoint.getY() ? (heightOfScreen / 2) + pixel_y : pixel_y;
+//            pixel_y = pixel_y + 50;
+                //int pixel_y = (int) ((currentPoint.getY() - initialPoint.getY()) * pixelPerAxes.getY());
+                //pixel_y = (heightOfScreen / 2) + pixel_y + 50;
+//            pixel_y = currentPoint.getY() < initialPoint.getY() ? pixel_y + (heightOfScreen / 2) : pixel_y;
+                pixel_y += 50;
+
+                canvas.drawCircle(pixel_x, pixel_y, 15, paint3);
+            }
+        }
     }
 
     private void writeCoordinatesToFile(Pair currentPoint, int counterForCoordinates) throws IOException {

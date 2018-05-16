@@ -117,46 +117,6 @@
             android:onClick="inMainActivityOnButtonClick"
             android:text="Plot Location to map" />
 
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignStart="@+id/tv_nameAccelerometerY"
-            android:layout_below="@+id/tv_nameAccelerometerY"
-            android:layout_marginTop="16dp"
-            android:text="@string/tf_Name_Veloc_X"
-            android:textSize="18sp" />
-
-        <TextView
-            android:id="@+id/textView2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignStart="@+id/textView"
-            android:layout_below="@+id/textView"
-            android:layout_marginTop="20dp"
-            android:text="@string/tf_Name_Veloc_Y"
-            android:textSize="18sp" />
-
-        <TextView
-            android:id="@+id/tv_outputVelocity_X"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignBottom="@+id/textView"
-            android:layout_alignEnd="@+id/tv_outputAccelerometer_Y"
-            android:layout_alignStart="@+id/tv_outputAccelerometer_Y"
-            android:text="..."
-            android:textSize="18sp" />
-
-        <TextView
-            android:id="@+id/tv_outputVelocity_Y"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignBottom="@+id/textView2"
-            android:layout_alignEnd="@+id/tv_outputVelocity_X"
-            android:layout_alignStart="@+id/tv_outputVelocity_X"
-            android:text="..."
-            android:textSize="18sp" />
-
         <Button
             android:id="@+id/btn_toCoordinateScreen"
             android:layout_width="166dp"
@@ -167,29 +127,21 @@
             android:text="Draw Lat and Lon" />
 
         <Button
-            android:id="@+id/btn_resetVelocity"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/btn_plotLocation"
-            android:layout_centerHorizontal="true"
-            android:onClick="inMainActivityOnButtonClick"
-            android:text="Reset velocity" />
-
-        <Button
             android:id="@+id/btn_generateTestGNSS"
-            android:layout_width="wrap_content"
+            android:layout_width="187dp"
             android:layout_height="wrap_content"
-            android:layout_above="@+id/btn_resetVelocity"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginBottom="59dp"
             android:onClick="inMainActivityOnButtonClick"
             android:text="Generate Test GNSS" />
 
         <Button
             android:id="@+id/btn_startGNSSListener"
-            android:layout_width="wrap_content"
+            android:layout_width="164dp"
             android:layout_height="wrap_content"
-            android:layout_above="@+id/btn_resetVelocity"
             android:layout_alignParentEnd="true"
-            android:layout_alignStart="@+id/tv_outputVelocity_Y"
+            android:layout_alignTop="@+id/btn_generateTestGNSS"
             android:onClick="inMainActivityOnButtonClick"
             android:text="Start GNSS-List" />
 
@@ -231,6 +183,16 @@
             android:layout_alignTop="@+id/textView3"
             android:text="..."
             android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/btn_currentPoints"
+            android:layout_width="310dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="119dp"
+            android:onClick="inMainActivityOnButtonClick"
+            android:text="@string/btn_currentPoints" />
 
 </RelativeLayout>
 <!--</android.support.constraint.ConstraintLayout>-->

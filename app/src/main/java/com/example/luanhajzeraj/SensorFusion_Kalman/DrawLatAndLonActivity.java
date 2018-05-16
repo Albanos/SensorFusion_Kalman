@@ -7,7 +7,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import model.FilterThread;
+
 public class DrawLatAndLonActivity extends AppCompatActivity {
+    private static FilterThread thread = new FilterThread();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,8 +55,14 @@ public class DrawLatAndLonActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         Log.d("LH", "In DrawLatAndLonActivity, onPause!");
+        Service.getThread().start();
+
         // Setze die alten Punkte aus der Klasse drawView
         Service.getListOfOldPoints().addAll(Service.getListOfPoints());
+
+        Service.getOldEstimatedPoints().addAll(Service.getEstimatedPoints());
+        Service.getEstimatedPoints().clear();
+
         // Bereinige die Liste
         Service.getListOfPoints().clear();
         Service.getListOfPositions().clear();

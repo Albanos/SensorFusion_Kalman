@@ -22,7 +22,11 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileWriter;
+
 import geodesy.GlobalPosition;
+import model.FilterThread;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
     private double latitude;
@@ -33,7 +37,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private LocationManager lm;
     private LocationListener locationListener;
     private SensorManager sensorManager;
-    private EstimationFilter filter = EstimationFilter.getInstance();
+    private SensorManager sensorManagerGravity;
+    private SensorManager sensorManagerAccelerometer;
+    private SensorManager sensorManagerMagnetic;
+    //private EstimationFilter filter = EstimationFilter.getInstance();
     // Update-Zeit: 1s
     private final int UPDATE_TIME_LOCATION = 1000;
     // Minimale Distanz der Änderung: null meter
@@ -66,6 +73,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void makeAnythingElseWithPermission() {
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensorManagerAccelerometer = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensorManagerMagnetic = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensorManagerGravity = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         registerLinAccelerometerListener();
     }
 
@@ -79,12 +89,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 latitude = location.getLatitude();
                 altitude = location.getAltitude();
 
+                // Setze die locationgenauigkeit im Service, um diese später für den Filter zu verwenden
+                Service.setLocationAccurancy(location.getAccuracy());
+
                 // Als Geschwindigkeit wird zunächst die GNSS-Geschwindigkeit genutzt (in m/s)
                 speed = location.hasSpeed() ? location.getSpeed() : -1;
 
                 createGlobalPositionForDrawLatAndLon(latitude, longitude, altitude);
                 writeGPSValuesToScreen(latitude, longitude, altitude, speed);
                 Log.d("LH", "GPS-Update");
+
+                // TEST
+                Service.calculateCartesianCoordinats();
+                if(Service.getListOfPoints().size() >= 2) {
+                    Service.getThread().start();
+                }
             }
 
             @Override
@@ -175,6 +194,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION),
                 SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
 
+        // Sensoren für die Berechnung der Beschleunigung auf Basis des WGS84-Systems
+        sensorManagerAccelerometer.registerListener(this,
+                sensorManagerAccelerometer.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
+
+        sensorManagerMagnetic.registerListener(this,
+                sensorManagerMagnetic.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),
+                SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
+
+        sensorManagerGravity.registerListener(this,
+                sensorManagerGravity.getDefaultSensor(Sensor.TYPE_GRAVITY),
+                SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
+
     }
 
     /**
@@ -183,15 +215,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      *
      * @param event
      */
+
+    private static float[] gravityValues = null;
+    private static float[] magneticValues = null;
     @Override
     public void onSensorChanged(SensorEvent event) {
 
+        // Berechnung der Geschwindigkeit --> Aus einer früheren Version
         if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
             // Berechne dt, mit berücksichtigung der Größen: timestamp sind nanosekunden!
             // Umrechnung ergibt eine zeitliche änderung in sekunden
             float dT = oldTimestamp == 0 ? 0.1f : (event.timestamp - oldTimestamp) / 1000000000.0f;
             oldTimestamp = event.timestamp;
-
             float linAccelerometer_x = event.values[0];
             //float linAccelerometer_y = event.values[1];
 
@@ -199,21 +234,55 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             // muss die z-Axe verwendet werden. Die Ache zeigt aus dem Bildschirm heraus, deshalb
             // kehren wir die Richtung mit *-1 um
             float linAccelerometer_y = event.values[2];
-            writeAccelerometerValuesToScreen(linAccelerometer_x, linAccelerometer_y);
+            //writeAccelerometerValuesToScreen(linAccelerometer_x, linAccelerometer_y);
 
             // Berechne auf Basis der Lin.-Beschleunigung die lineare Geschwindigkeit
             Service.calculateLinearVelocity(linAccelerometer_x, linAccelerometer_y, dT);
             velocity = Service.getLinVeloc();
-            writeVelocityValuesToScreen(velocity[0], velocity[1]);
+            //writeVelocityValuesToScreen(velocity[0], velocity[1]);
         }
-    }
 
-    private void writeVelocityValuesToScreen(float vel_x, float vel_y) {
-        TextView output_vel_x = findViewById(R.id.tv_outputVelocity_X);
-        output_vel_x.setText(Float.toString(vel_x));
+        // Berechnung der Beschleunigung im Erd-Koordinatensystem (WGS84), auf Basis der
+        // Gerätebeschleunigung
+        // Von: https://stackoverflow.com/a/36477630
+        if ((gravityValues != null) && (magneticValues != null)
+                //&& (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)) {
+                && (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION)) {
 
-        TextView output_vel_y = findViewById(R.id.tv_outputVelocity_Y);
-        output_vel_y.setText(Float.toString(vel_y));
+            float[] deviceRelativeAcceleration = new float[4];
+            deviceRelativeAcceleration[0] = event.values[0];
+            deviceRelativeAcceleration[1] = event.values[1];
+            deviceRelativeAcceleration[2] = event.values[2];
+            deviceRelativeAcceleration[3] = 0;
+
+            // Change the device relative acceleration values to earth relative values
+            // X axis -> East
+            // Y axis -> North Pole
+            // Z axis -> Sky
+
+            float[] R = new float[16], I = new float[16], earthAcc = new float[16];
+
+            SensorManager.getRotationMatrix(R, I, gravityValues, magneticValues);
+
+            float[] inv = new float[16];
+
+            android.opengl.Matrix.invertM(inv, 0, R, 0);
+            android.opengl.Matrix.multiplyMV(earthAcc, 0, inv, 0, deviceRelativeAcceleration, 0);
+            writeAccelerometerValuesToScreen(earthAcc[0], earthAcc[1]);
+
+            // Aktualisiere die Werte im Service
+            Service.setAccel_x_wgs(earthAcc[0]);
+            Service.setAccel_y_wgs(earthAcc[1]);
+
+
+            //Log.d("Acceleration", "Values: (" + earthAcc[0] + ", " + earthAcc[1] + ", " + earthAcc[2] + ")");
+
+
+        } else if (event.sensor.getType() == Sensor.TYPE_GRAVITY) {
+            gravityValues = event.values;
+        } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+            magneticValues = event.values;
+        }
     }
 
 
@@ -267,19 +336,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             String geoUri = "http://maps.google.com/maps?q=loc:" + latitude + "," + longitude + " (TADA!)";
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(geoUri));
             this.startActivity(intent);
-        } else if (view.getId() == R.id.btn_toCoordinateScreen) {
+        }
+        else if (view.getId() == R.id.btn_toCoordinateScreen) {
+            Toast.makeText(this,
+                    "Anzahl, echte Punkte:  " + Service.getListOfPoints().size() + "\n\n" +
+                            "Anzahl der geschätzten Punkte:  " + Service.getEstimatedPoints().size(),
+                    Toast.LENGTH_SHORT).show();
+
+
+            Service.getThread().stop();
             // Starte den Screen zum zeichnen der Breiten & Längengrade
             startActivity(new Intent(MainActivity.this, DrawLatAndLonActivity.class));
-        }
-
-        // Setze die Geschwindigkeit in x- und y-Richtung zurück
-        else if (view.getId() == R.id.btn_resetVelocity) {
-            velocity[0] = 0.0f;
-            velocity[1] = 0.0f;
-
-            //filter.setLinVeloc(velocity);
-            Service.setLinVeloc(velocity);
-            writeVelocityValuesToScreen(velocity[0], velocity[1]);
         }
 
         // Im Test-Modus: Setze breite und länge wie statisch gesetzt, im Test-Modus
@@ -308,14 +375,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             //getLocationAndRegisterGnssListener();
             registerGPSListener();
         }
-    }
 
-    double[] getDemoCoordinates() {
-        double[] d = new double[]{
-                51.3120000 + (demoGNSSCounter * .00000666), // latitude
-                9.4728500 + (demoGNSSCounter * .00000666) // longitude
-        };
-        demoGNSSCounter++;
-        return d;
+        // Führe eine Schätzung der Position durch
+        else if (view.getId() == R.id.btn_currentPoints) {
+            Toast.makeText(this,
+                    "Letzter, echter Punkt:  " + Math.round(Service.getListOfPoints().getLast().getX())
+                            + " ; " +  + Math.round(Service.getListOfPoints().getLast().getY()) + "("+Service.getListOfPoints().size() +")"+ "\n\n"
+                            + "Letzter geschätzter Punkt:  "
+                            + Service.getEstimatedPoints().getLast().getX()
+                            + " ; " + Service.getEstimatedPoints().getLast().getY() + "(" + Service.getEstimatedPoints().size() +")"+ "\n\n"
+                    + "Geschätzte Geschw.:  " + Service.getEstimatedVelocity().getLast().getX() + " ; " + Service.getEstimatedVelocity().getLast().getY(),
+                    Toast.LENGTH_LONG).show();
+        }
     }
 }

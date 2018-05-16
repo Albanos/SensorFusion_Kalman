@@ -1,12 +1,14 @@
 package com.example.luanhajzeraj.SensorFusion_Kalman;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import geodesy.Ellipsoid;
 import geodesy.GeodeticCalculator;
 import geodesy.GeodeticMeasurement;
 import geodesy.GlobalPosition;
+import model.FilterThread;
 import model.Pair;
 
 /**
@@ -17,13 +19,23 @@ class Service {
      * Liste mit realen GPS Koordinaten auf Basis von geodesy
      */
     private static List<GlobalPosition> listOfPositions = new ArrayList<>();
-    private static List<Pair> listOfPoints = new ArrayList<>();
+    //private static List<Pair> listOfPoints = new ArrayList<>();
+    private static LinkedList<Pair> listOfPoints = new LinkedList<>();
+    private static LinkedList<Pair> estimatedPoints = new LinkedList<>();
+    private static LinkedList<Pair> oldEstimatedPoints = new LinkedList<>();
     private static List<Pair> listOfOldPoints = new ArrayList<>();
     private static GlobalPosition firstGlobalPositionOfList;
     private static Pair initialPoint;
     private static boolean canSave = true;
     private static boolean semaphore = true;
     private static float[] linVeloc = new float[]{0,0};
+    private static float locationAccurancy;
+    private static float accel_x_wgs;
+    private static float accel_y_wgs;
+    private static Pair firstCartasianPoint = null;
+    private static boolean isDrawing = false;
+    private static FilterThread thread = new FilterThread();
+    private static LinkedList<Pair> estimatedVelocity = new LinkedList<>();
 
     /**
      * Berechnet auf Basis der Liste von GlobalPositions die kartesischen Koordinaten und speichert
@@ -32,6 +44,7 @@ class Service {
      * @return
      */
     static boolean calculateCartesianCoordinats() {
+        //listOfPoints.clear();
         if (listOfPositions.size() >= 2) {
 
             // Berechne für den Rest die x- und y-Koordinaten
@@ -50,6 +63,12 @@ class Service {
                 // y = dist. * cos(rad (angle) )
                 Service.getListOfPoints().add(new Pair(distance * Math.sin(Math.toRadians(angle)), distance * Math.cos(Math.toRadians(angle))));
 
+                // Setze den ersten berechneten Punkt
+                if(Service.getFirstCartasianPoint() == null){
+                    Service.setFirstCartasianPoint(new Pair(
+                            distance * Math.sin(Math.toRadians(angle)),
+                            distance * Math.cos(Math.toRadians(angle))));
+                }
             }
 
             // Setze den initialPoint mit seinen Koordinaten genau einmal: Wähle dafür den ersten
@@ -158,7 +177,15 @@ class Service {
         return listOfOldPoints;
     }
 
-    static List<Pair> getListOfPoints() {
+    public static LinkedList<Pair> getOldEstimatedPoints() {
+        return oldEstimatedPoints;
+    }
+
+    //    static List<Pair> getListOfPoints() {
+//        return listOfPoints;
+//    }
+
+    static LinkedList<Pair> getListOfPoints() {
         return listOfPoints;
     }
     static List<GlobalPosition> getListOfPositions() {
@@ -175,5 +202,57 @@ class Service {
 
     public static void setLinVeloc(float[] linVeloc) {
         Service.linVeloc = linVeloc;
+    }
+
+    public static float getLocationAccurancy() {
+        return locationAccurancy;
+    }
+
+    public static void setLocationAccurancy(float locationAccurancy) {
+        Service.locationAccurancy = locationAccurancy;
+    }
+
+    public static float getAccel_x_wgs() {
+        return accel_x_wgs;
+    }
+
+    public static void setAccel_x_wgs(float accel_x_wgs) {
+        Service.accel_x_wgs = accel_x_wgs;
+    }
+
+    public static float getAccel_y_wgs() {
+        return accel_y_wgs;
+    }
+
+    public static void setAccel_y_wgs(float accel_y_wgs) {
+        Service.accel_y_wgs = accel_y_wgs;
+    }
+
+    public static LinkedList<Pair> getEstimatedPoints() {
+        return estimatedPoints;
+    }
+
+    public static Pair getFirstCartasianPoint() {
+        return firstCartasianPoint;
+    }
+
+    public static void setFirstCartasianPoint(Pair firstCartasianPoint) {
+        Service.firstCartasianPoint = firstCartasianPoint;
+    }
+
+    public static boolean isIsDrawing() {
+        return isDrawing;
+    }
+
+    public static void setIsDrawing(boolean isDrawing) {
+        Service.isDrawing = isDrawing;
+    }
+
+    public static FilterThread getThread() {
+        return thread;
+    }
+
+    public static LinkedList<Pair> getEstimatedVelocity() {
+        return estimatedVelocity;
     }
 }
