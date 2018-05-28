@@ -101,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 // TEST
                 Service.calculateCartesianCoordinats();
-                if(Service.getListOfPoints().size() >= 2) {
+                if(Service.getListOfPoints().size() >= 1) {
                     Service.getThread().start();
                 }
             }
@@ -249,6 +249,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 //&& (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)) {
                 && (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION)) {
 
+            // Setze dt im Service und greife im Filter darauf zu
+            Service.setDt(Service.getOldDt() == 0 ? 0.1f : (event.timestamp - Service.getOldDt()) / 1000000000.0f);
+            Service.setOldDt(event.timestamp);
+
             float[] deviceRelativeAcceleration = new float[4];
             deviceRelativeAcceleration[0] = event.values[0];
             deviceRelativeAcceleration[1] = event.values[1];
@@ -333,10 +337,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void inMainActivityOnButtonClick(View view) {
         // Plote Länge und Breite in Google-Maps
         if (view.getId() == R.id.btn_plotLocation) {
-            String geoUri = "http://maps.google.com/maps?q=loc:" + latitude + "," + longitude + " (TADA!)";
+            Service.calculateWGSCoordinatesForAllCartesianPoints();
+
+            String geoUri = "http://maps.google.com/maps?q=loc:"
+                    + Service.getListOfWGSDestinationPoints().getLast().getLatitude() + ","
+                    + Service.getListOfWGSDestinationPoints().getLast().getLongitude() + " (TADA!)";
+
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(geoUri));
             this.startActivity(intent);
         }
+
         else if (view.getId() == R.id.btn_toCoordinateScreen) {
             Toast.makeText(this,
                     "Anzahl, echte Punkte:  " + Service.getListOfPoints().size() + "\n\n" +

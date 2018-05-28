@@ -3,6 +3,8 @@ package com.example.luanhajzeraj.SensorFusion_Kalman;
 
 import android.util.Log;
 
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.NullArgumentException;
 import org.apache.commons.math3.filter.DefaultMeasurementModel;
 import org.apache.commons.math3.filter.DefaultProcessModel;
 import org.apache.commons.math3.filter.KalmanFilter;
@@ -10,8 +12,14 @@ import org.apache.commons.math3.filter.MeasurementModel;
 import org.apache.commons.math3.filter.ProcessModel;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.CholeskyDecomposition;
+import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.linear.SingularMatrixException;
+import org.apache.commons.math3.random.JDKRandomGenerator;
+import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.util.MathUtils;
 
 import model.Pair;
 
@@ -25,8 +33,9 @@ public class EstimationFilter{
 
     private KalmanFilter filter;
     // Frage nach dt... Erstmal statisch festlegen, mit 0.1
-    final double dt = 0.1d;
-    //final double dt = 1d;
+    //final double dt = 0.1d;
+//    final double dt = 0.000001d;
+    final double dt = Service.getDt();
 
     // Statische Variablen, von der doku-page
     // position measurement noise (meter)
@@ -51,6 +60,9 @@ public class EstimationFilter{
     private RealMatrix R;
     private RealMatrix P;
     private RealMatrix H;
+
+    private ProcessModel pm;
+    private MeasurementModel mm;
 
     public EstimationFilter() {
         float locationAccurancy = Service.getLocationAccurancy();
@@ -100,6 +112,8 @@ public class EstimationFilter{
                 {locationVarianz, 0},
                 {0, locationVarianz}
         });
+        Log.d("DIM", "Zeilendimension, R:  " + R.getRowDimension());
+        Log.d("DIM", "Spaltendimension, R:  " + R.getColumnDimension());
 
         P = new Array2DRowRealMatrix(new double[][]{
                 {10, 0, 0, 0},
@@ -108,26 +122,9 @@ public class EstimationFilter{
                 {0, 0, 0, 10}
         });
 
-        //updateMeasuerement();
-        ProcessModel pm = new DefaultProcessModel(A, B, Q, x, P);
-        MeasurementModel mm = new DefaultMeasurementModel(H, R);
+        pm = new DefaultProcessModel(A, B, Q, x, P);
+        mm = new DefaultMeasurementModel(H, R);
         filter = new KalmanFilter(pm, mm);
-
-    }
-
-    private void updateMeasuerement() {
-        // Locationgenauigkeit für Messrauschkovarianz
-        //float locationAccurancy = Service.getLocationAccurancy();
-        // Standardabweichung der Beschleunigung (statisch festgelegt), für Prozessrauschen
-        //final double sigmaAccel = 1f;
-
-        //double coordinate_x = Service.getFirstCartasianPoint().getX();
-        //double coordinate_y = Service.getFirstCartasianPoint().getY();
-
-        //double speed_x = 0;
-        //double speed_y = 0;
-        float accel_x = Service.getAccel_x_wgs();
-        float accel_y = Service.getAccel_y_wgs();
 
     }
 
@@ -140,42 +137,43 @@ public class EstimationFilter{
 
         RealVector mNoise = new ArrayRealVector(2);
 
-        //for(int i =0; i < 300; i++) {
-        int i =0;
         for (; ; ) {
             if(Service.getThread().isInterrupted()){
                 break;
             }
-            //updateMeasuerement();
-//            float accel_x = Service.getAccel_x_wgs();
-//            float accel_y = Service.getAccel_y_wgs();
-//
-//            u.setEntry(0,accel_x);
-//            u.setEntry(1,accel_y);
 
-            filter.predict(u);
+            filter.predict();
 
             // simulate the process (von doku-page)
 //            RealVector pNoise = tmpPNoise.mapMultiply(accelNoise * rand.nextGaussian());
-            RealVector pNoise = tmpPNoise.mapMultiply(accelNoise);
+            //RealVector pNoise = tmpPNoise.mapMultiply(accelNoise);
 
             // x = A * x + B * u + pNoise --> rauschvariante wurde von der doku-page übernommen
-            x = A.operate(x).add(B.operate(u)).add(pNoise);
+            //x = A.operate(x).add(B.operate(u)).add(pNoise);
 
             // simulate the measurement (von doku-page)
-            mNoise.setEntry(0, measurementNoise * Service.getAccel_x_wgs());
-            mNoise.setEntry(1, measurementNoise * Service.getAccel_y_wgs());
+//            mNoise.setEntry(0, measurementNoise * rand.nextGaussian());
+//            mNoise.setEntry(1, measurementNoise *  rand.nextGaussian());
+            mNoise.setEntry(0, Service.getAccel_x_wgs());
+            mNoise.setEntry(1, Service.getAccel_y_wgs());
+
+            //RealVector z = new ArrayRealVector(new double[] {Service.getAccel_x_wgs(), Service.getAccel_y_wgs()});
+            RealVector z = new ArrayRealVector(new double[] {Service.getListOfPoints().getLast().getX(),
+                    Service.getListOfPoints().getLast().getY()});
+
 
 
             // z = H * x + m_Noise
-            RealVector z = H.operate(x).add(mNoise);
+            //RealVector z = H.operate(x).add(mNoise);
 
             filter.correct(z);
+            //filter.correct(mNoise);
 
             double estimatedPosition_x = filter.getStateEstimation()[0];
             double estimatedPosition_y = filter.getStateEstimation()[1];
 
-            Log.d("HI", "Punkte:  " + estimatedPosition_x + " ; " + estimatedPosition_y);
+            Log.d("HI", "Geschätzter Punkt:  " + estimatedPosition_x + " ; " + estimatedPosition_y);
+            Log.d("HI", "Echter Punkt:  " + Service.getListOfPoints().getLast().getX() + " ; " + Service.getListOfPoints().getLast().getY());
 
             // Füge die geschätzten Punkte der Liste hinzu, um sie später zeichnen zu können
             Service.getEstimatedPoints().add(new Pair(estimatedPosition_x, estimatedPosition_y));
@@ -203,5 +201,47 @@ public class EstimationFilter{
             instance = new EstimationFilter();
         }
         return instance;
+    }
+
+    public void correct(final RealVector z)
+            throws NullArgumentException, DimensionMismatchException, SingularMatrixException {
+
+        // sanity checks
+        MathUtils.checkNotNull(z);
+        if (z.getDimension() != H.getRowDimension()) {
+            throw new DimensionMismatchException(z.getDimension(),
+                    H.getRowDimension());
+        }
+
+        // S = H * P(k) * H' + R
+        RealMatrix s = H.multiply(P)
+                .multiply(H.transpose())
+                .add(mm.getMeasurementNoise());
+
+        // Inn = z(k) - H * xHat(k)-
+        RealVector innovation = z.subtract(H.operate(x));
+
+        // calculate gain matrix
+        // K(k) = P(k)- * H' * (H * P(k)- * H' + R)^-1
+        // K(k) = P(k)- * H' * S^-1
+
+        // instead of calculating the inverse of S we can rearrange the formula,
+        // and then solve the linear equation A x X = B with A = S', X = K' and B = (H * P)'
+
+        // K(k) * S = P(k)- * H'
+        // S' * K(k)' = H * P(k)-'
+//        RealMatrix kalmanGain = new CholeskyDecomposition(s).getSolver()
+//                .solve(measurementMatrix.multiply(errorCovariance.transpose()))
+//                .transpose();
+        RealMatrix kalmanGain = P.multiply(H.transpose());
+
+        // update estimate with measurement z(k)
+        // xHat(k) = xHat(k)- + K * Inn
+        x = x.add(kalmanGain.operate(innovation));
+
+        // update covariance of prediction error
+        // P(k) = (I - K * H) * P(k)-
+        RealMatrix identity = MatrixUtils.createRealIdentityMatrix(kalmanGain.getRowDimension());
+        P = identity.subtract(kalmanGain.multiply(H)).multiply(P);
     }
 }

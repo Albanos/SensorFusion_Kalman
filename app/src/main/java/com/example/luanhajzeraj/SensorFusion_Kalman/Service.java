@@ -1,13 +1,16 @@
 package com.example.luanhajzeraj.SensorFusion_Kalman;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
 import geodesy.Ellipsoid;
 import geodesy.GeodeticCalculator;
 import geodesy.GeodeticMeasurement;
+import geodesy.GlobalCoordinates;
 import geodesy.GlobalPosition;
+import model.Coordinates;
 import model.FilterThread;
 import model.Pair;
 
@@ -36,6 +39,10 @@ class Service {
     private static boolean isDrawing = false;
     private static FilterThread thread = new FilterThread();
     private static LinkedList<Pair> estimatedVelocity = new LinkedList<>();
+    private static double dt =0;
+    private static double oldDt =0;
+    private static HashMap<Pair, List<Double>> angleDistancePairMap = new HashMap<>();
+    private static LinkedList<Coordinates> listOfWGSDestinationPoints = new LinkedList<>();
 
     /**
      * Berechnet auf Basis der Liste von GlobalPositions die kartesischen Koordinaten und speichert
@@ -61,7 +68,21 @@ class Service {
                 // Formeln (SEHR WICHTIG: Eingabe MUSS in rad sein):
                 // x = dist. * sin(rad (angle) )
                 // y = dist. * cos(rad (angle) )
-                Service.getListOfPoints().add(new Pair(distance * Math.sin(Math.toRadians(angle)), distance * Math.cos(Math.toRadians(angle))));
+                Pair point = new Pair(distance * Math.sin(Math.toRadians(angle)), distance * Math.cos(Math.toRadians(angle)));
+
+                Service.getListOfPoints().add(point);
+
+
+                // MERKE: Dies muss eigentlich für die geschätzten Punkte erfolgen!!!
+                // Jedoch ist noch unklar, wie Winkel und Abstand der geschätzten, KARTESISCHEN Pkt.
+                // zum Ausgangspunkt (GLOBALPOSITION) erfolgen soll...
+
+                // Füge der Map den Punkt mit seinem Absatnd und Winkel hinzu, um Später die Punkte
+                //wie zurück (in Kugelkoordinaten) rechnen zu können
+                List<Double> list = new ArrayList<>();
+                list.add(distance);
+                list.add(angle);
+                Service.getAngleDistancePairMap().put(point,list);
 
                 // Setze den ersten berechneten Punkt
                 if(Service.getFirstCartasianPoint() == null){
@@ -81,6 +102,46 @@ class Service {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Berechnet die neuen Koordinaten für einen spezifischen Zielpunkt, ausgehend vom
+     * Start-Punkt. Die Breite und länge wird in einer Map zurückgegeben
+     *
+     * @param pair
+     * @return
+     */
+    static HashMap<String, Double> calculateWGSCoordiantesOnCartesianCoordinates(Pair pair){
+        double distanceOfPair = Service.getAngleDistancePairMap().get(pair).get(0);
+        double angleOfPair = Service.getAngleDistancePairMap().get(pair).get(1);
+
+        GeodeticCalculator calculator = new GeodeticCalculator();
+        GlobalCoordinates globalCoordinates = calculator.calculateEndingGlobalCoordinates(Ellipsoid.WGS84,
+                Service.getFirstGlobalPositionOfList(), distanceOfPair, angleOfPair);
+
+        HashMap<String, Double> returnMap = new HashMap<>();
+
+        returnMap.put("Latitude", globalCoordinates.getLatitude());
+        returnMap.put("Longitude", globalCoordinates.getLongitude());
+
+        return returnMap;
+    }
+
+    static void calculateWGSCoordinatesForAllCartesianPoints(){
+        for(Pair p : Service.getEstimatedPoints()){
+            double distance = Service.getAngleDistancePairMap().get(p).get(0);
+            double angle = Service.getAngleDistancePairMap().get(p).get(1);
+
+            GeodeticCalculator calculator = new GeodeticCalculator();
+            GlobalCoordinates globalCoordinates = calculator.calculateEndingGlobalCoordinates(Ellipsoid.WGS84,
+                    Service.getFirstGlobalPositionOfList(), distance, angle);
+
+            Coordinates coordinates = new Coordinates(globalCoordinates.getLatitude(), globalCoordinates.getLongitude());
+
+            if(! Service.getListOfWGSDestinationPoints().contains(coordinates)) {
+                Service.getListOfWGSDestinationPoints().add(coordinates);
+            }
+        }
     }
 
     /**
@@ -254,5 +315,29 @@ class Service {
 
     public static LinkedList<Pair> getEstimatedVelocity() {
         return estimatedVelocity;
+    }
+
+    public static double getDt() {
+        return dt;
+    }
+
+    public static void setDt(double dt) {
+        Service.dt = dt;
+    }
+
+    public static double getOldDt() {
+        return oldDt;
+    }
+
+    public static void setOldDt(double oldDt) {
+        Service.oldDt = oldDt;
+    }
+
+    public static HashMap<Pair, List<Double>> getAngleDistancePairMap() {
+        return angleDistancePairMap;
+    }
+
+    public static LinkedList<Coordinates> getListOfWGSDestinationPoints() {
+        return listOfWGSDestinationPoints;
     }
 }
