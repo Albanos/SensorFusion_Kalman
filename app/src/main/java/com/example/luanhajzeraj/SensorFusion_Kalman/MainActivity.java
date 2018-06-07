@@ -2,6 +2,7 @@ package com.example.luanhajzeraj.SensorFusion_Kalman;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -13,7 +14,9 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -22,11 +25,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.File;
-import java.io.FileWriter;
-
 import geodesy.GlobalPosition;
-import model.FilterThread;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
     private double latitude;
@@ -88,6 +87,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 longitude = location.getLongitude();
                 latitude = location.getLatitude();
                 altitude = location.getAltitude();
+
+                // Setze die Geschwindigkeitsgenauigkeit, um diese im Filter nutzen zu können --> NICHT VERFÜGBAR!!
+                //Service.setSpeedAccurancy_wgs(location.getSpeedAccuracyMetersPerSecond());
+
+                // Berechne die WGS-Geschwindigkeit, auf Basis des Betrages der Geschwindigkeit:
+                // Berechnung erfolgt ähnlich den kartesischen Koordinaten
+                // speed_x = speed_location * sin( rad(bearing) )
+                // speed_y = speed_location * cos( rad(bearing) )
+                float speedOfGnss = location.hasSpeed() ? location.getSpeed() : 0;
+                float bearing = location.hasBearing() ? location.getBearing() : 1;
+
+                Service.setSpeed_x_wgs(speedOfGnss * Math.sin(Math.toRadians(bearing)));
+                Service.setSpeed_y_wgs(speedOfGnss * Math.cos(Math.toRadians(bearing)));
 
                 // Setze die locationgenauigkeit im Service, um diese später für den Filter zu verwenden
                 Service.setLocationAccurancy(location.getAccuracy());
@@ -280,6 +292,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
             //Log.d("Acceleration", "Values: (" + earthAcc[0] + ", " + earthAcc[1] + ", " + earthAcc[2] + ")");
+            Service.calculateLinearVelocity(earthAcc[0],earthAcc[1], (float) Service.getDt());
 
 
         } else if (event.sensor.getType() == Sensor.TYPE_GRAVITY) {
@@ -387,7 +400,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
 
         // Führe eine Schätzung der Position durch
-        else if (view.getId() == R.id.btn_currentPoints) {
+        else if (view.getId() == R.id.btn_exportToExcel) {
+//            Toast.makeText(this,
+//                    "Letzter, echter Punkt:  " + Math.round(Service.getListOfPoints().getLast().getX())
+//                            + " ; " +  + Math.round(Service.getListOfPoints().getLast().getY()) + "("+Service.getListOfPoints().size() +")"+ "\n\n"
+//                            + "Letzter geschätzter Punkt:  "
+//                            + Service.getEstimatedPoints().getLast().getX()
+//                            + " ; " + Service.getEstimatedPoints().getLast().getY() + "(" + Service.getEstimatedPoints().size() +")"+ "\n\n"
+//                    + "Geschätzte Geschw.:  " + Service.getEstimatedVelocity().getLast().getX() + " ; " + Service.getEstimatedVelocity().getLast().getY(),
+//                    Toast.LENGTH_LONG).show();
+
+            // Zum Test den Button zweck-entfremdet: Zeichne den Plot, indem du die jeweilige Activity "activity_test_with_..." startest
+            //startActivity(new Intent(MainActivity.this, testActivityWithPlotFramework.class));
+
+//            Toast.makeText(this, "Geschwindigkeit, x:  " + Service.getLinVeloc()[0] +
+//                            "\n" + "Geschwindigkeit, y:  " + Service.getLinVeloc()[1],
+//                    Toast.LENGTH_LONG).show();
+            Service.getThread().stop();
+
+            Toast.makeText(this,"Beginne mit Export...",Toast.LENGTH_SHORT).show();
+            ExcelFileCreator export = new ExcelFileCreator();
+            export.createExcelFile(this);
+            Toast.makeText(this,"Export erfolgreich",Toast.LENGTH_SHORT).show();
+
+        }
+
+        // Test von Zeichnungsframeworks
+        else if(view.getId() == R.id.btn_testFrameworkPlot){
+            //startActivity(new Intent(MainActivity.this, testActivityWithPlotFramework.class));
             Toast.makeText(this,
                     "Letzter, echter Punkt:  " + Math.round(Service.getListOfPoints().getLast().getX())
                             + " ; " +  + Math.round(Service.getListOfPoints().getLast().getY()) + "("+Service.getListOfPoints().size() +")"+ "\n\n"

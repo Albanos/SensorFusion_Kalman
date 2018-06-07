@@ -157,11 +157,10 @@
 
         <TextView
             android:id="@+id/tv_outputAltitude"
-            android:layout_width="wrap_content"
+            android:layout_width="153dp"
             android:layout_height="wrap_content"
-            android:layout_alignBottom="@+id/textView4"
-            android:layout_alignEnd="@+id/tv_outputLongitudeSystem"
-            android:layout_alignStart="@+id/tv_outputLongitudeSystem"
+            android:layout_alignStart="@+id/tv_outputLatitudeSystem"
+            android:layout_alignTop="@+id/textView4"
             android:text="..."
             android:textSize="18sp" />
 
@@ -185,14 +184,23 @@
             android:textSize="18sp" />
 
         <Button
-            android:id="@+id/btn_currentPoints"
-            android:layout_width="310dp"
+            android:id="@+id/btn_exportToExcel"
+            android:layout_width="187dp"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
-            android:layout_marginBottom="119dp"
+            android:layout_alignParentStart="true"
+            android:layout_marginBottom="118dp"
             android:onClick="inMainActivityOnButtonClick"
-            android:text="@string/btn_currentPoints" />
+            android:text="@string/btn_exportToExcel" />
+
+        <Button
+            android:id="@+id/btn_testFrameworkPlot"
+            android:layout_width="164dp"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/btn_startGNSSListener"
+            android:layout_alignTop="@+id/btn_exportToExcel"
+            android:onClick="inMainActivityOnButtonClick"
+            android:text="@string/btn_testPlotFramework" />
 
 </RelativeLayout>
 <!--</android.support.constraint.ConstraintLayout>-->

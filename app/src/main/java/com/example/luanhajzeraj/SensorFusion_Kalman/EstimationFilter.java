@@ -21,6 +21,8 @@ import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.util.MathUtils;
 
+import java.sql.Timestamp;
+
 import model.Pair;
 
 /**
@@ -28,7 +30,7 @@ import model.Pair;
  */
 
 //Nutzung von einem thread-gesicherten singelton-pattern
-public class EstimationFilter{
+public class EstimationFilter {
     private static EstimationFilter instance;
 
     private KalmanFilter filter;
@@ -52,6 +54,7 @@ public class EstimationFilter{
     // R: Messrauschkovarianz
     // P: Kovarianz
     // H: Messmatrix
+    // z: Messvektor
     private RealVector x;
     private RealVector u;
     private RealMatrix A;
@@ -60,9 +63,14 @@ public class EstimationFilter{
     private RealMatrix R;
     private RealMatrix P;
     private RealMatrix H;
+    private RealVector z;
+    private RealVector currentMeasurment;
 
     private ProcessModel pm;
     private MeasurementModel mm;
+
+    private static double oldMeasurementX;
+    private static double oldMeasurementY;
 
     public EstimationFilter() {
         float locationAccurancy = Service.getLocationAccurancy();
@@ -72,8 +80,10 @@ public class EstimationFilter{
         double coordinate_x = Service.getFirstCartasianPoint().getX();
         double coordinate_y = Service.getFirstCartasianPoint().getY();
 
-        double speed_x = 0;
-        double speed_y = 0;
+//        double speed_x = 0;
+//        double speed_y = 0;
+        double speed_x = Service.getSpeed_x_wgs();
+        double speed_y = Service.getSpeed_y_wgs();
         float accel_x = Service.getAccel_x_wgs();
         float accel_y = Service.getAccel_y_wgs();
 
@@ -86,9 +96,16 @@ public class EstimationFilter{
                 {0, 0, 0, 1}
         });
 
+//        B = new Array2DRowRealMatrix(new double[][]{
+//                {(Math.pow(dt, 2) / 2), 0},
+//                {0, (Math.pow(dt, 2) / 2)},
+//                {dt, 0},
+//                {0, dt}
+//        });
+
         B = new Array2DRowRealMatrix(new double[][]{
-                {(Math.pow(dt, 2) / 2), 0},
-                {0, (Math.pow(dt, 2) / 2)},
+                {0, 0},
+                {0, 0},
                 {dt, 0},
                 {0, dt}
         });
@@ -97,6 +114,12 @@ public class EstimationFilter{
                 {1, 0, 0, 0},
                 {0, 1, 0, 0}
         });
+//        H = new Array2DRowRealMatrix(new double[][]{
+//                {1, 0, 0, 0},
+//                {0, 1, 0, 0},
+//                {0, 0, 1, 0},
+//                {0, 0, 0, 1}
+//        });
 
         // Standardabweichung für Beschleunigung ist statisch 1, deshalb ignoriert
         Q = new Array2DRowRealMatrix(new double[][]{
@@ -112,8 +135,14 @@ public class EstimationFilter{
                 {locationVarianz, 0},
                 {0, locationVarianz}
         });
-        Log.d("DIM", "Zeilendimension, R:  " + R.getRowDimension());
-        Log.d("DIM", "Spaltendimension, R:  " + R.getColumnDimension());
+//        double locationVarianz = Math.pow(locationAccurancy, 2);
+//        double speedVarianz = Math.pow(5,2); // speedVarianz wird statisch festgelegt, da Geschw.-Genauigkeit nicht verfügbar
+//        R = new Array2DRowRealMatrix(new double[][]{
+//                {locationVarianz, 0},
+//                {0, locationVarianz},
+//                {speedVarianz, 0},
+//                {0, speedVarianz}
+//        });
 
         P = new Array2DRowRealMatrix(new double[][]{
                 {10, 0, 0, 0},
@@ -122,6 +151,15 @@ public class EstimationFilter{
                 {0, 0, 0, 10}
         });
 
+//        z = new ArrayRealVector(new double[]{Service.getListOfPoints().getLast().getX(),
+//                                            Service.getListOfPoints().getLast().getY(),
+//                                            Service.getSpeed_x_wgs(), Service.getSpeed_y_wgs()});
+
+        z = new ArrayRealVector(new double[]{Service.getListOfPoints().getLast().getX(),
+                Service.getListOfPoints().getLast().getY()});
+
+        currentMeasurment = z;
+
         pm = new DefaultProcessModel(A, B, Q, x, P);
         mm = new DefaultMeasurementModel(H, R);
         filter = new KalmanFilter(pm, mm);
@@ -129,51 +167,57 @@ public class EstimationFilter{
     }
 
     public void makeEstimation() {
+//        double measurementX = Service.getListOfPoints().size() == 0 ? oldMeasurementX : Service.getAccel_x_wgs();
+//        double measurementY = Service.getListOfPoints().size() == 0 ? oldMeasurementY : Service.getAccel_y_wgs();
 
-        // Zwei Vektoren von der Doku-seite: tmpNoise wurde um zwei erweitert, da wir das rauschen
-        // eben in zwei Dimensionen haben
-        RealVector tmpPNoise = new ArrayRealVector(new double[]
-                {Math.pow(dt, 2d) / 2d, dt, Math.pow(dt, 2d) / 2d, dt});
-
-        RealVector mNoise = new ArrayRealVector(2);
-
+        int i =1;
         for (; ; ) {
-            if(Service.getThread().isInterrupted()){
+            if (Service.getThread().isInterrupted()) {
                 break;
             }
-
+            Log.d("HI", "Iteration, Nr.:  " + i++);
+            //filter.predict(u);
             filter.predict();
 
-            // simulate the process (von doku-page)
-//            RealVector pNoise = tmpPNoise.mapMultiply(accelNoise * rand.nextGaussian());
-            //RealVector pNoise = tmpPNoise.mapMultiply(accelNoise);
-
-            // x = A * x + B * u + pNoise --> rauschvariante wurde von der doku-page übernommen
-            //x = A.operate(x).add(B.operate(u)).add(pNoise);
-
-            // simulate the measurement (von doku-page)
-//            mNoise.setEntry(0, measurementNoise * rand.nextGaussian());
-//            mNoise.setEntry(1, measurementNoise *  rand.nextGaussian());
-            mNoise.setEntry(0, Service.getAccel_x_wgs());
-            mNoise.setEntry(1, Service.getAccel_y_wgs());
-
             //RealVector z = new ArrayRealVector(new double[] {Service.getAccel_x_wgs(), Service.getAccel_y_wgs()});
-            RealVector z = new ArrayRealVector(new double[] {Service.getListOfPoints().getLast().getX(),
+            //RealVector z = new ArrayRealVector(new double[] {measurementX, measurementY});
+
+//            double measurementX = Service.getListOfPoints().size() == 0 ? oldMeasurementX : Service.getListOfPoints().getLast().getX();
+//            double measurementY = Service.getListOfPoints().size() == 0 ? oldMeasurementY : Service.getListOfPoints().getLast().getY();
+//
+//            oldMeasurementX = measurementX;
+//            oldMeasurementY = measurementY;
+
+//            RealVector z = new ArrayRealVector(new double[] {Service.getListOfPoints().getLast().getX(),
+//                                                Service.getListOfPoints().getLast().getY()});
+            //z = new ArrayRealVector(new double[] {Service.getAccel_x_wgs(),
+            //                                  Service.getAccel_y_wgs()});
+
+//            currentMeasurment = new ArrayRealVector(new double[]{Service.getListOfPoints().getLast().getX(),
+//                                                    Service.getListOfPoints().getLast().getY(),
+//                                                    Service.getSpeed_x_wgs(), Service.getSpeed_y_wgs()});
+
+            currentMeasurment = new ArrayRealVector(new double[]{Service.getListOfPoints().getLast().getX(),
                     Service.getListOfPoints().getLast().getY()});
 
-
-
-            // z = H * x + m_Noise
-            //RealVector z = H.operate(x).add(mNoise);
-
-            filter.correct(z);
-            //filter.correct(mNoise);
+            // Nur wenn eine neue Messung vorliegt, wird ein Korrektur-schritt vorgenommen
+            if (!currentMeasurment.equals(z)) {
+                filter.correct(currentMeasurment);
+                z = currentMeasurment;
+                Log.d("HI", "New measurement updated");
+            }
 
             double estimatedPosition_x = filter.getStateEstimation()[0];
             double estimatedPosition_y = filter.getStateEstimation()[1];
 
-            Log.d("HI", "Geschätzter Punkt:  " + estimatedPosition_x + " ; " + estimatedPosition_y);
-            Log.d("HI", "Echter Punkt:  " + Service.getListOfPoints().getLast().getX() + " ; " + Service.getListOfPoints().getLast().getY());
+            // Enzerre die Punkte, da die Liste leer, wenn der Zeichen-Screen verlassen wird
+            // (nur für Log-Ausgabe...)
+            double cartesianX = Service.getListOfPoints().size() == 0 ? 0 : Service.getListOfPoints().getLast().getX();
+            double cartesianY = Service.getListOfPoints().size() == 0 ? 0 : Service.getListOfPoints().getLast().getY();
+            String timestamp = Service.getListOfPoints().getLast().getTimestamp().toString();
+
+            Log.d("HI", "Geschätzter Punkt:  " + estimatedPosition_x + " ; " + estimatedPosition_y + " Zur Zeit (jetzt):  "+ new Timestamp(System.currentTimeMillis()));
+            Log.d("HI", "Echter Punkt:  " + cartesianX + " ; " + cartesianY + " Zeit:  " + timestamp);
 
             // Füge die geschätzten Punkte der Liste hinzu, um sie später zeichnen zu können
             Service.getEstimatedPoints().add(new Pair(estimatedPosition_x, estimatedPosition_y));
@@ -181,7 +225,11 @@ public class EstimationFilter{
             // Füge die geschätzte Geschwindigkeit der liste hinzu
             Service.getEstimatedVelocity().add(new Pair(filter.getStateEstimation()[2], filter.getStateEstimation()[3]));
 
+
         }
+
+        Log.d("HI", "=============================Letzter, echter:  " + Service.getListOfPoints().getLast().getX() + " ; " + Service.getListOfPoints().getLast().getY());
+        Log.d("HI", "=============================Letzter, geschätzter:  " + Service.getEstimatedPoints().getLast().getX() + " ; " + Service.getEstimatedPoints().getLast().getY());
 //    double estimatedPosition_x = filter.getStateEstimation()[0];
 //    double estimatedPosition_y = filter.getStateEstimation()[1];
 //
@@ -201,47 +249,5 @@ public class EstimationFilter{
             instance = new EstimationFilter();
         }
         return instance;
-    }
-
-    public void correct(final RealVector z)
-            throws NullArgumentException, DimensionMismatchException, SingularMatrixException {
-
-        // sanity checks
-        MathUtils.checkNotNull(z);
-        if (z.getDimension() != H.getRowDimension()) {
-            throw new DimensionMismatchException(z.getDimension(),
-                    H.getRowDimension());
-        }
-
-        // S = H * P(k) * H' + R
-        RealMatrix s = H.multiply(P)
-                .multiply(H.transpose())
-                .add(mm.getMeasurementNoise());
-
-        // Inn = z(k) - H * xHat(k)-
-        RealVector innovation = z.subtract(H.operate(x));
-
-        // calculate gain matrix
-        // K(k) = P(k)- * H' * (H * P(k)- * H' + R)^-1
-        // K(k) = P(k)- * H' * S^-1
-
-        // instead of calculating the inverse of S we can rearrange the formula,
-        // and then solve the linear equation A x X = B with A = S', X = K' and B = (H * P)'
-
-        // K(k) * S = P(k)- * H'
-        // S' * K(k)' = H * P(k)-'
-//        RealMatrix kalmanGain = new CholeskyDecomposition(s).getSolver()
-//                .solve(measurementMatrix.multiply(errorCovariance.transpose()))
-//                .transpose();
-        RealMatrix kalmanGain = P.multiply(H.transpose());
-
-        // update estimate with measurement z(k)
-        // xHat(k) = xHat(k)- + K * Inn
-        x = x.add(kalmanGain.operate(innovation));
-
-        // update covariance of prediction error
-        // P(k) = (I - K * H) * P(k)-
-        RealMatrix identity = MatrixUtils.createRealIdentityMatrix(kalmanGain.getRowDimension());
-        P = identity.subtract(kalmanGain.multiply(H)).multiply(P);
     }
 }

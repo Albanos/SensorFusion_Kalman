@@ -43,6 +43,11 @@ class Service {
     private static double oldDt =0;
     private static HashMap<Pair, List<Double>> angleDistancePairMap = new HashMap<>();
     private static LinkedList<Coordinates> listOfWGSDestinationPoints = new LinkedList<>();
+    // Geschwindigkeit, basierend auf der Geschwindigkeit der Location
+    private static double speed_x_wgs =0;
+    private static double speed_y_wgs =0;
+    // Genauigkeit der Geschwindigkeit, in meter/sec
+    private static double speedAccurancy_wgs =0;
 
     /**
      * Berechnet auf Basis der Liste von GlobalPositions die kartesischen Koordinaten und speichert
@@ -339,5 +344,29 @@ class Service {
 
     public static LinkedList<Coordinates> getListOfWGSDestinationPoints() {
         return listOfWGSDestinationPoints;
+    }
+
+    public static double getSpeed_x_wgs() {
+        return speed_x_wgs;
+    }
+
+    public static void setSpeed_x_wgs(double speed_x_wgs) {
+        Service.speed_x_wgs = speed_x_wgs;
+    }
+
+    public static double getSpeed_y_wgs() {
+        return speed_y_wgs;
+    }
+
+    public static void setSpeed_y_wgs(double speed_y_wgs) {
+        Service.speed_y_wgs = speed_y_wgs;
+    }
+
+    public static double getSpeedAccurancy_wgs() {
+        return speedAccurancy_wgs;
+    }
+
+    public static void setSpeedAccurancy_wgs(double speedAccurancy_wgs) {
+        Service.speedAccurancy_wgs = speedAccurancy_wgs;
     }
 }

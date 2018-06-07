@@ -10,5 +10,6 @@
     <string name="tf_Name_Altitude">Altitude</string>
     <string name="tf_Name_Speed">Velocity (GNSS)</string>
     <string name="action_settings">Settings</string>
-    <string name="btn_currentPoints">Get last Points</string>
+    <string name="btn_exportToExcel">Export Measurement to Excel</string>
+    <string name="btn_testPlotFramework">Test-Plot</string>
 </resources>

@@ -26,15 +26,20 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     //implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
-    implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.3'
+    implementation 'org.apache.commons:commons-math3:3.3'
     implementation 'com.android.support:design:26.1.0'
-    // Libary zum ploten der kartesischen Punkte
-    //implementation 'com.jjoe64:graphview:4.2.2'
+    // Libary zum ploten der kartesischen Punkte: die neuere Version 4.2.2 lässt sich nicht einbinden!
+    implementation 'com.jjoe64:graphview:4.2.1'
+    //Neue, externe Datei. Gefunden: https://github.com/halfhp/androidplot
+    implementation "com.androidplot:androidplot-core:1.5.5"
+    // Für den Export von Daten in ein excel-file
+    implementation group: 'org.apache.poi', name: 'poi', version: '3.9'
+
 }
