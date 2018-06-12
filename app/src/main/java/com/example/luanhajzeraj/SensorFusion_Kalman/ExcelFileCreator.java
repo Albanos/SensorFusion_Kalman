@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.LinkedList;
 
@@ -23,6 +24,8 @@ import model.Pair;
 public class ExcelFileCreator {
 
     public void createExcelFile(Context context) {
+
+
         // ======================Grundstruktur für den Excel-Export erzeugen
         HSSFWorkbook workbook = new HSSFWorkbook();
 
@@ -36,10 +39,13 @@ public class ExcelFileCreator {
 
         HSSFRow sheet1_row2 = firstSheet.createRow(1);
         HSSFCell cell_2A = sheet1_row2.createCell(0);
-        cell_2A.setCellValue(new HSSFRichTextString("X"));
+        cell_2A.setCellValue(new HSSFRichTextString("Timestamp"));
 
         HSSFCell cell_2B = sheet1_row2.createCell(1);
-        cell_2B.setCellValue(new HSSFRichTextString("Y"));
+        cell_2B.setCellValue(new HSSFRichTextString("X"));
+
+        HSSFCell cell_2C = sheet1_row2.createCell(2);
+        cell_2C.setCellValue(new HSSFRichTextString("Y"));
 
         // Die geschätzten Punkte in sheet2 --> Header erzeugen
         HSSFRow sheet2_row1 = secondSheet.createRow(0);
@@ -48,23 +54,27 @@ public class ExcelFileCreator {
 
         HSSFRow sheet2_row2 = secondSheet.createRow(1);
         HSSFCell cell_2A_sheet2 = sheet2_row2.createCell(0);
-        cell_2A_sheet2.setCellValue(new HSSFRichTextString("X"));
+        cell_2A_sheet2.setCellValue(new HSSFRichTextString("Timestamp"));
 
         HSSFCell cell_2B_sheet2 = sheet2_row2.createCell(1);
-        cell_2B_sheet2.setCellValue(new HSSFRichTextString("Y"));
+        cell_2B_sheet2.setCellValue(new HSSFRichTextString("X"));
+
+        HSSFCell cell_2C_sheet2 = sheet2_row2.createCell(2);
+        cell_2C_sheet2.setCellValue(new HSSFRichTextString("Y"));
 
         // Zeichne originale Punkte
         int i = 2;
         for(Pair p : Service.getListOfPoints()){
+            String timestamp = p.getTimestamp().toString();
             Double x = p.getX();
             Double y = p.getY();
 
             HSSFRow currentRow = firstSheet.createRow(i);
-            HSSFCell originalX = currentRow.createCell(0);
-            HSSFCell originalY = currentRow.createCell(1);
+            HSSFCell originalTimestamp = currentRow.createCell(0);
+            HSSFCell originalX = currentRow.createCell(1);
+            HSSFCell originalY = currentRow.createCell(2);
 
-//            originalX.setCellValue(new HSSFRichTextString(x.toString()));
-//            originalY.setCellValue(new HSSFRichTextString(y.toString()));
+            originalTimestamp.setCellValue(timestamp);
             originalX.setCellValue(x);
             originalY.setCellValue(y);
             i++;
@@ -73,13 +83,16 @@ public class ExcelFileCreator {
         // Zeichne die geschätzten Punkte
         i = 2;
         for(Pair p : Service.getEstimatedPoints()){
+            String timestamp = p.getTimestamp().toString();
             Double x = p.getX();
             Double y = p.getY();
 
             HSSFRow currentRow = secondSheet.createRow(i);
-            HSSFCell estimatedX = currentRow.createCell(0);
-            HSSFCell estimatedY = currentRow.createCell(1);
+            HSSFCell estimatedTimestamp = currentRow.createCell(0);
+            HSSFCell estimatedX = currentRow.createCell(1);
+            HSSFCell estimatedY = currentRow.createCell(2);
 
+            estimatedTimestamp.setCellValue(timestamp);
             estimatedX.setCellValue(x);
             estimatedY.setCellValue(y);
             i++;
@@ -90,7 +103,8 @@ public class ExcelFileCreator {
         try {
             String str_path = Environment.getExternalStorageDirectory().toString();
             File file;
-            file = new File(str_path, "exportMeasurement_" + Calendar.getInstance().getTime().toString() + ".xls");
+            //file = new File(str_path, "exportMeasurement_" + Calendar.getInstance().getTime().toString() + ".xls");
+            file = new File(str_path, "exportMeasurement_" + new Timestamp(System.currentTimeMillis()) + ".xls");
             fos = new FileOutputStream(file);
             workbook.write(fos);
         } catch (IOException e) {

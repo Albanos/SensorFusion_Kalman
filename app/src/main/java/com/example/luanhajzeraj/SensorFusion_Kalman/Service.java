@@ -1,5 +1,6 @@
 package com.example.luanhajzeraj.SensorFusion_Kalman;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -21,7 +22,7 @@ class Service {
     /**
      * Liste mit realen GPS Koordinaten auf Basis von geodesy
      */
-    private static List<GlobalPosition> listOfPositions = new ArrayList<>();
+    private static LinkedList<GlobalPosition> listOfPositions = new LinkedList<>();
     //private static List<Pair> listOfPoints = new ArrayList<>();
     private static LinkedList<Pair> listOfPoints = new LinkedList<>();
     private static LinkedList<Pair> estimatedPoints = new LinkedList<>();
@@ -107,6 +108,88 @@ class Service {
             return true;
         }
         return false;
+    }
+
+
+    /**
+     * Berechnet auf Basis der Liste von GlobalPositions die kartesischen Koordinaten und speichert
+     * diese in listOfPoints.
+     *
+     * @return
+     */
+    static boolean calculateCartesianCoordinats(Timestamp t) {
+        //listOfPoints.clear();
+        if (listOfPositions.size() >= 2) {
+
+            // Berechne für den Rest die x- und y-Koordinaten
+            for (GlobalPosition gp : listOfPositions) {
+                // Berechne Abstand der jeweiligen position zur ersten Position
+                // Der Abstand wird in Metern angegeben; Der Winkel wird im Winkelmaß (deg) berechnet,
+                // ist immer am Nordpol ausgerichtet und bewegt sich entgegen des Uhrzeigersinns
+                // Beispiel: Punkt 1 ist irgendwo im Raum. Punkt 2 ist rechts daneben, dann ist der
+                // Winkel etwa 90 Grad
+                double distance = coordinateDistanceBetweenTwoPoints(firstGlobalPositionOfList, gp);
+                double angle = coordinateAngleBetweenTwoPoints(firstGlobalPositionOfList, gp);
+
+                // Berechne auf Basis von Distanz und Winkel die x- und y-Komponente des zweiten Punktes
+                // Formeln (SEHR WICHTIG: Eingabe MUSS in rad sein):
+                // x = dist. * sin(rad (angle) )
+                // y = dist. * cos(rad (angle) )
+                Pair point = new Pair(distance * Math.sin(Math.toRadians(angle)), distance * Math.cos(Math.toRadians(angle)));
+                point.setTimestamp(t);
+
+                Service.getListOfPoints().add(point);
+
+
+                // MERKE: Dies muss eigentlich für die geschätzten Punkte erfolgen!!!
+                // Jedoch ist noch unklar, wie Winkel und Abstand der geschätzten, KARTESISCHEN Pkt.
+                // zum Ausgangspunkt (GLOBALPOSITION) erfolgen soll...
+
+                // Füge der Map den Punkt mit seinem Absatnd und Winkel hinzu, um Später die Punkte
+                //wie zurück (in Kugelkoordinaten) rechnen zu können
+                List<Double> list = new ArrayList<>();
+                list.add(distance);
+                list.add(angle);
+                Service.getAngleDistancePairMap().put(point,list);
+
+                // Setze den ersten berechneten Punkt
+                if(Service.getFirstCartasianPoint() == null){
+                    Service.setFirstCartasianPoint(new Pair(
+                            distance * Math.sin(Math.toRadians(angle)),
+                            distance * Math.cos(Math.toRadians(angle))));
+                }
+            }
+
+            // Setze den initialPoint mit seinen Koordinaten genau einmal: Wähle dafür den ersten
+            // berechneten Punkt auf Basis der "firstGlobalPosition", da dieser x- & y-Koordinaten.
+            // firstGlobalPosition ist eben eine GlobalPosition
+            if(semaphore) {
+                initialPoint = new Pair(getListOfPoints().get(0).getX(), getListOfPoints().get(0).getY());
+                semaphore = false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    static void calculateCartesianPointForLastKnownPosition(){
+        if(listOfPositions.size() >= 2){
+            GlobalPosition lastKnownPosition = listOfPositions.getLast();
+
+            double distance = coordinateDistanceBetweenTwoPoints(firstGlobalPositionOfList, lastKnownPosition);
+            double angle = coordinateAngleBetweenTwoPoints(firstGlobalPositionOfList, lastKnownPosition);
+
+            Pair point = new Pair(distance * Math.sin(Math.toRadians(angle)), distance * Math.cos(Math.toRadians(angle)));
+
+            Service.getListOfPoints().add(point);
+
+            // Setze den ersten berechneten Punkt
+            if(Service.getFirstCartasianPoint() == null){
+                Service.setFirstCartasianPoint(new Pair(
+                        distance * Math.sin(Math.toRadians(angle)),
+                        distance * Math.cos(Math.toRadians(angle))));
+            }
+        }
     }
 
     /**
@@ -254,7 +337,7 @@ class Service {
     static LinkedList<Pair> getListOfPoints() {
         return listOfPoints;
     }
-    static List<GlobalPosition> getListOfPositions() {
+    static LinkedList<GlobalPosition> getListOfPositions() {
         return listOfPositions;
     }
 

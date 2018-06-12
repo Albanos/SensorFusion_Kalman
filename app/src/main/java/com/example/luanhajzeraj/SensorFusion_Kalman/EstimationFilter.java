@@ -176,8 +176,8 @@ public class EstimationFilter {
                 break;
             }
             Log.d("HI", "Iteration, Nr.:  " + i++);
-            //filter.predict(u);
-            filter.predict();
+            filter.predict(u);
+            //filter.predict();
 
             //RealVector z = new ArrayRealVector(new double[] {Service.getAccel_x_wgs(), Service.getAccel_y_wgs()});
             //RealVector z = new ArrayRealVector(new double[] {measurementX, measurementY});
@@ -249,5 +249,9 @@ public class EstimationFilter {
             instance = new EstimationFilter();
         }
         return instance;
+    }
+
+    public RealVector getU() {
+        return u;
     }
 }

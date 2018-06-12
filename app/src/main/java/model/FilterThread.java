@@ -6,6 +6,7 @@ import com.example.luanhajzeraj.SensorFusion_Kalman.EstimationFilter;
 
 public class FilterThread implements Runnable {
     Thread backgroundThread;
+    EstimationFilter filter;
 
 
     public void start() {
@@ -25,7 +26,7 @@ public class FilterThread implements Runnable {
     public void run() {
         try {
             while (!backgroundThread.interrupted()) {
-                EstimationFilter filter = new EstimationFilter();
+                filter = new EstimationFilter();
                 filter.makeEstimation();
             }
         }
@@ -35,5 +36,9 @@ public class FilterThread implements Runnable {
     }
     public boolean isInterrupted(){
         return backgroundThread.isInterrupted() ? true : false;
+    }
+
+    public EstimationFilter getFilter() {
+        return filter;
     }
 }
