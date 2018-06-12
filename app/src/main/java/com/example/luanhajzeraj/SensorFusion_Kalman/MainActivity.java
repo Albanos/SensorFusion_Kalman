@@ -38,7 +38,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager sensorManagerGravity;
     private SensorManager sensorManagerAccelerometer;
     private SensorManager sensorManagerMagnetic;
-    //private EstimationFilter filter = EstimationFilter.getInstance();
     // Update-Zeit: 1s
     private final int UPDATE_TIME_LOCATION = 1000;
     // Minimale Distanz der Änderung: null meter
@@ -111,8 +110,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 Log.d("LH", "GPS-Update, time:  " + new Timestamp(System.currentTimeMillis()));
 
                 // TEST
-                //Service.calculateCartesianCoordinats();
-                //Service.calculateCartesianCoordinats(new Timestamp(System.currentTimeMillis()));
                 Service.calculateCartesianPointForLastKnownPosition();
                 if(Service.getListOfPoints().size() >= 1) {
                     Service.getThread().start();

@@ -23,7 +23,6 @@ class Service {
      * Liste mit realen GPS Koordinaten auf Basis von geodesy
      */
     private static LinkedList<GlobalPosition> listOfPositions = new LinkedList<>();
-    //private static List<Pair> listOfPoints = new ArrayList<>();
     private static LinkedList<Pair> listOfPoints = new LinkedList<>();
     private static LinkedList<Pair> estimatedPoints = new LinkedList<>();
     private static LinkedList<Pair> oldEstimatedPoints = new LinkedList<>();
@@ -329,10 +328,6 @@ class Service {
     public static LinkedList<Pair> getOldEstimatedPoints() {
         return oldEstimatedPoints;
     }
-
-    //    static List<Pair> getListOfPoints() {
-//        return listOfPoints;
-//    }
 
     static LinkedList<Pair> getListOfPoints() {
         return listOfPoints;
