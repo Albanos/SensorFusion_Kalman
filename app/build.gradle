@@ -23,6 +23,11 @@ android {
         targetCompatibility 1.8
         sourceCompatibility 1.8
     }
+    repositories {
+        maven {
+            url "https://jitpack.io"
+        }
+    }
 }
 
 dependencies {
@@ -41,5 +46,6 @@ dependencies {
     implementation "com.androidplot:androidplot-core:1.5.5"
     // Für den Export von Daten in ein excel-file
     implementation group: 'org.apache.poi', name: 'poi', version: '3.9'
-
+    // Für die Zeitsyncronisation (relevant für die Messung)
+    implementation 'com.github.instacart.truetime-android:library-extension-rx:3.3'
 }

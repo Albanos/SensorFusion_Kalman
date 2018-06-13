@@ -89,12 +89,14 @@ public class EstimationFilter {
 
         x = new ArrayRealVector(new double[]{coordinate_x, coordinate_y, speed_x, speed_y});
         u = new ArrayRealVector(new double[]{accel_x, accel_y});
+        //u = new ArrayRealVector(new double[]{coordinate_x, coordinate_y});
         A = new Array2DRowRealMatrix(new double[][]{
                 {1, 0, dt, 0},
                 {0, 1, 0, dt},
                 {0, 0, 1, 0},
                 {0, 0, 0, 1}
         });
+
 
 //        B = new Array2DRowRealMatrix(new double[][]{
 //                {(Math.pow(dt, 2) / 2), 0},
@@ -109,6 +111,13 @@ public class EstimationFilter {
                 {dt, 0},
                 {0, dt}
         });
+
+//        B = new Array2DRowRealMatrix(new double[][]{
+//                {1, 0},
+//                {0, 1},
+//                {0, 0},
+//                {0, 0}
+//        });
 
         H = new Array2DRowRealMatrix(new double[][]{
                 {1, 0, 0, 0},
@@ -214,10 +223,10 @@ public class EstimationFilter {
             // (nur für Log-Ausgabe...)
             double cartesianX = Service.getListOfPoints().size() == 0 ? 0 : Service.getListOfPoints().getLast().getX();
             double cartesianY = Service.getListOfPoints().size() == 0 ? 0 : Service.getListOfPoints().getLast().getY();
-            String timestamp = Service.getListOfPoints().getLast().getTimestamp().toString();
+            //String timestamp = (String) Service.getListOfPoints().getLast().getTimestamp();
 
             Log.d("HI", "Geschätzter Punkt:  " + estimatedPosition_x + " ; " + estimatedPosition_y + " Zur Zeit (jetzt):  "+ new Timestamp(System.currentTimeMillis()));
-            Log.d("HI", "Echter Punkt:  " + cartesianX + " ; " + cartesianY + " Zeit:  " + timestamp);
+            Log.d("HI", "Echter Punkt:  " + cartesianX + " ; " + cartesianY);
 
             // Füge die geschätzten Punkte der Liste hinzu, um sie später zeichnen zu können
             Service.getEstimatedPoints().add(new Pair(estimatedPosition_x, estimatedPosition_y));

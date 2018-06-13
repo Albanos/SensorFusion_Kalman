@@ -3,6 +3,7 @@ package com.example.luanhajzeraj.SensorFusion_Kalman;
 import android.content.Context;
 import android.os.Environment;
 
+import org.apache.commons.math3.linear.RealVector;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.hssf.usermodel.HSSFRow;
@@ -17,6 +18,7 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.LinkedList;
 
+import model.Coordinates;
 import model.Pair;
 
 // Von: https://stackoverflow.com/a/16475889
@@ -31,6 +33,7 @@ public class ExcelFileCreator {
 
         HSSFSheet firstSheet = workbook.createSheet("Original");
         HSSFSheet secondSheet = workbook.createSheet("Estimated");
+        HSSFSheet thirdSheet = workbook.createSheet("Original_WGS");
 
         // Die echten Punkte in sheet1 --> Header erzeugen
         HSSFRow sheet1_row1 = firstSheet.createRow(0);
@@ -62,10 +65,37 @@ public class ExcelFileCreator {
         HSSFCell cell_2C_sheet2 = sheet2_row2.createCell(2);
         cell_2C_sheet2.setCellValue(new HSSFRichTextString("Y"));
 
-        // Zeichne originale Punkte
+        HSSFCell cell_2D_sheet2 = sheet2_row2.createCell(3);
+        cell_2D_sheet2.setCellValue(new HSSFRichTextString("VectorU"));
+
+        HSSFCell cell_2E_sheet2 = sheet2_row2.createCell(4);
+        cell_2E_sheet2.setCellValue(new HSSFRichTextString("Velocity_X"));
+
+        HSSFCell cell_2F_sheet2 = sheet2_row2.createCell(5);
+        cell_2F_sheet2.setCellValue(new HSSFRichTextString("Velocity_Y"));
+
+        HSSFRow sheet3_row1 = thirdSheet.createRow(0);
+        HSSFCell cell_1A_sheet3 = sheet3_row1.createCell(0);
+        cell_1A_sheet3.setCellValue(new HSSFRichTextString("Original_WGS"));
+
+        HSSFRow sheet3_row2 = thirdSheet.createRow(1);
+        HSSFCell cell_2A_sheet3 = sheet3_row2.createCell(0);
+        cell_2A_sheet3.setCellValue(new HSSFRichTextString("Timestamp"));
+
+        HSSFCell cell_2B_sheet3 = sheet3_row2.createCell(1);
+        cell_2B_sheet3.setCellValue(new HSSFRichTextString("Latitude"));
+
+        HSSFCell cell_2C_sheet3 = sheet3_row2.createCell(2);
+        cell_2C_sheet3.setCellValue(new HSSFRichTextString("Longitude"));
+
+        HSSFCell cell_2D_sheet3 = sheet3_row2.createCell(3);
+        cell_2D_sheet3.setCellValue(new HSSFRichTextString("Altitude"));
+
+        // Zeichne originalen kartesischen Punkte
         int i = 2;
         for(Pair p : Service.getListOfPoints()){
-            String timestamp = p.getTimestamp().toString();
+            //String timestamp = p.getTimestamp().toString();
+            long timestamp = p.getTimestamp();
             Double x = p.getX();
             Double y = p.getY();
 
@@ -82,19 +112,54 @@ public class ExcelFileCreator {
 
         // Zeichne die geschätzten Punkte
         i = 2;
+        int j=0;
         for(Pair p : Service.getEstimatedPoints()){
-            String timestamp = p.getTimestamp().toString();
+            //String timestamp = p.getTimestamp().toString();
+            long timestamp = p.getTimestamp();
             Double x = p.getX();
             Double y = p.getY();
+            RealVector currentU = Service.getThread().getFilter().getU();
+            double estimatedVelocityX = Service.getEstimatedVelocity().get(j).getX();
+            double estimatedVelocityY = Service.getEstimatedVelocity().get(j).getY();
 
             HSSFRow currentRow = secondSheet.createRow(i);
             HSSFCell estimatedTimestamp = currentRow.createCell(0);
             HSSFCell estimatedX = currentRow.createCell(1);
             HSSFCell estimatedY = currentRow.createCell(2);
+            HSSFCell vectorU = currentRow.createCell(3);
+            HSSFCell velocityX = currentRow.createCell(4);
+            HSSFCell velocityY = currentRow.createCell(5);
 
             estimatedTimestamp.setCellValue(timestamp);
             estimatedX.setCellValue(x);
             estimatedY.setCellValue(y);
+            vectorU.setCellValue(currentU.toString());
+            velocityX.setCellValue(estimatedVelocityX);
+            velocityY.setCellValue(estimatedVelocityY);
+
+            i++;
+            j++;
+        }
+
+        i = 2;
+        // Zeichne die originalen WGS Punkte
+        for(Coordinates c : Service.getListOfWGSCoordinates()){
+            double latitude = c.getLatitude();
+            double longitude = c.getLongitude();
+            double altitude = c.getAltitude();
+            long timestamp = c.getTimestamp();
+
+            HSSFRow currentRow = thirdSheet.createRow(i);
+            HSSFCell originalWGS_timestamp = currentRow.createCell(0);
+            HSSFCell originalWGS_latitude = currentRow.createCell(1);
+            HSSFCell originalWGS_longitude = currentRow.createCell(2);
+            HSSFCell originalWGS_altitude = currentRow.createCell(3);
+
+            originalWGS_timestamp.setCellValue(timestamp);
+            originalWGS_latitude.setCellValue(latitude);
+            originalWGS_longitude.setCellValue(longitude);
+            originalWGS_altitude.setCellValue(altitude);
+
             i++;
         }
 

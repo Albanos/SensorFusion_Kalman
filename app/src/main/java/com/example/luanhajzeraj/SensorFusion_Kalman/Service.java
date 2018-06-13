@@ -48,6 +48,7 @@ class Service {
     private static double speed_y_wgs =0;
     // Genauigkeit der Geschwindigkeit, in meter/sec
     private static double speedAccurancy_wgs =0;
+    private static LinkedList<Coordinates> listOfWGSCoordinates = new LinkedList<>();
 
     /**
      * Berechnet auf Basis der Liste von GlobalPositions die kartesischen Koordinaten und speichert
@@ -135,7 +136,6 @@ class Service {
                 // x = dist. * sin(rad (angle) )
                 // y = dist. * cos(rad (angle) )
                 Pair point = new Pair(distance * Math.sin(Math.toRadians(angle)), distance * Math.cos(Math.toRadians(angle)));
-                point.setTimestamp(t);
 
                 Service.getListOfPoints().add(point);
 
@@ -446,5 +446,9 @@ class Service {
 
     public static void setSpeedAccurancy_wgs(double speedAccurancy_wgs) {
         Service.speedAccurancy_wgs = speedAccurancy_wgs;
+    }
+
+    public static LinkedList<Coordinates> getListOfWGSCoordinates() {
+        return listOfWGSCoordinates;
     }
 }

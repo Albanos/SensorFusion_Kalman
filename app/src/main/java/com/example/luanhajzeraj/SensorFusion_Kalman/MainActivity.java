@@ -22,9 +22,13 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.instacart.library.truetime.TrueTimeRx;
+
 import java.sql.Timestamp;
 
 import geodesy.GlobalPosition;
+import io.reactivex.schedulers.Schedulers;
+import model.Coordinates;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
     private double latitude;
@@ -51,7 +55,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initializeTimeNowFrameworkForRealTime();
         showValueOfPosition();
+    }
+
+    private void initializeTimeNowFrameworkForRealTime() {
+        TrueTimeRx.build()
+                .initializeRx("time.google.com")
+                .subscribeOn(Schedulers.io())
+                .subscribe(date -> {
+                    Log.v("HI", "TrueTime was initialized and we have a time: " + date);
+                }, throwable -> {
+                    throwable.printStackTrace();
+                });
     }
 
     private void showValueOfPosition() {
@@ -85,6 +101,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 longitude = location.getLongitude();
                 latitude = location.getLatitude();
                 altitude = location.getAltitude();
+
+                // Merke dir alle Koordinaten die rein kommen
+                Service.getListOfWGSCoordinates().add(new Coordinates(latitude,longitude,altitude));
 
                 // Setze die Geschwindigkeitsgenauigkeit, um diese im Filter nutzen zu können --> NICHT VERFÜGBAR!!
                 //Service.setSpeedAccurancy_wgs(location.getSpeedAccuracyMetersPerSecond());
@@ -283,14 +302,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             android.opengl.Matrix.invertM(inv, 0, R, 0);
             android.opengl.Matrix.multiplyMV(earthAcc, 0, inv, 0, deviceRelativeAcceleration, 0);
             writeAccelerometerValuesToScreen(earthAcc[0], earthAcc[1]);
+            //writeAccelerometerValuesToScreen(earthAcc[1], earthAcc[2]);
 
             // Aktualisiere die Werte im Service
+//            Service.setAccel_x_wgs(earthAcc[0]);
+//            Service.setAccel_y_wgs(earthAcc[2]);
             Service.setAccel_x_wgs(earthAcc[0]);
             Service.setAccel_y_wgs(earthAcc[1]);
 
 
             //Log.d("Acceleration", "Values: (" + earthAcc[0] + ", " + earthAcc[1] + ", " + earthAcc[2] + ")");
             Service.calculateLinearVelocity(earthAcc[0],earthAcc[1], (float) Service.getDt());
+            //Service.calculateLinearVelocity(earthAcc[0],earthAcc[2], (float) Service.getDt());
 
 
         } else if (event.sensor.getType() == Sensor.TYPE_GRAVITY) {
