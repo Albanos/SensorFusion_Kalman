@@ -122,6 +122,11 @@ public class ExcelFileCreator {
             double estimatedVelocityX = Service.getEstimatedVelocity().get(j).getX();
             double estimatedVelocityY = Service.getEstimatedVelocity().get(j).getY();
 
+            // Zeichne ausserdem noch die Globalen Koordinaten des jeweils geschätzten Punktes
+            double latitudeOfP = Service.getPointToWGSMap().get(p).getLatitude();
+            double longitudeOfP = Service.getPointToWGSMap().get(p).getLongitude();
+
+
             HSSFRow currentRow = secondSheet.createRow(i);
             HSSFCell estimatedTimestamp = currentRow.createCell(0);
             HSSFCell estimatedX = currentRow.createCell(1);
@@ -129,6 +134,8 @@ public class ExcelFileCreator {
             HSSFCell vectorU = currentRow.createCell(3);
             HSSFCell velocityX = currentRow.createCell(4);
             HSSFCell velocityY = currentRow.createCell(5);
+            HSSFCell latitudeOfPoint = currentRow.createCell(6);
+            HSSFCell longitudeOfPoint = currentRow.createCell(7);
 
             estimatedTimestamp.setCellValue(timestamp);
             estimatedX.setCellValue(x);
@@ -136,6 +143,8 @@ public class ExcelFileCreator {
             vectorU.setCellValue(currentU.toString());
             velocityX.setCellValue(estimatedVelocityX);
             velocityY.setCellValue(estimatedVelocityY);
+            latitudeOfPoint.setCellValue(latitudeOfP);
+            longitudeOfPoint.setCellValue(longitudeOfP);
 
             i++;
             j++;

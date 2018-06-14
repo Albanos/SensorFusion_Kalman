@@ -185,8 +185,8 @@ public class EstimationFilter {
                 break;
             }
             Log.d("HI", "Iteration, Nr.:  " + i++);
-            filter.predict(u);
-            //filter.predict();
+            //filter.predict(u);
+            filter.predict();
 
             //RealVector z = new ArrayRealVector(new double[] {Service.getAccel_x_wgs(), Service.getAccel_y_wgs()});
             //RealVector z = new ArrayRealVector(new double[] {measurementX, measurementY});
@@ -228,8 +228,17 @@ public class EstimationFilter {
             Log.d("HI", "Geschätzter Punkt:  " + estimatedPosition_x + " ; " + estimatedPosition_y + " Zur Zeit (jetzt):  "+ new Timestamp(System.currentTimeMillis()));
             Log.d("HI", "Echter Punkt:  " + cartesianX + " ; " + cartesianY);
 
+            Pair estimatedPoint = new Pair(estimatedPosition_x, estimatedPosition_y);
+
             // Füge die geschätzten Punkte der Liste hinzu, um sie später zeichnen zu können
-            Service.getEstimatedPoints().add(new Pair(estimatedPosition_x, estimatedPosition_y));
+            //Service.getEstimatedPoints().add(new Pair(estimatedPosition_x, estimatedPosition_y));
+            Service.getEstimatedPoints().add(estimatedPoint);
+
+            // Berechne Winkel und Distanz des geschätzten Punktes, zum Startpunkt (für spätere Rückrichtung in Lat/Lon)
+            Service.calculateAngleAndDistanceByPoint(estimatedPoint);
+
+            // Bestimme Lat/Lon von dem berechneten cartesischen Punkt
+            Service.calculateWGSCoordinateByCartesianPoint(estimatedPoint);
 
             // Füge die geschätzte Geschwindigkeit der liste hinzu
             Service.getEstimatedVelocity().add(new Pair(filter.getStateEstimation()[2], filter.getStateEstimation()[3]));

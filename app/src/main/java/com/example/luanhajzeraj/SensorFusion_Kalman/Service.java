@@ -3,6 +3,7 @@ package com.example.luanhajzeraj.SensorFusion_Kalman;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -49,6 +50,7 @@ class Service {
     // Genauigkeit der Geschwindigkeit, in meter/sec
     private static double speedAccurancy_wgs =0;
     private static LinkedList<Coordinates> listOfWGSCoordinates = new LinkedList<>();
+    private static LinkedHashMap<Pair, Coordinates> pointToWGSMap = new LinkedHashMap<>();
 
     /**
      * Berechnet auf Basis der Liste von GlobalPositions die kartesischen Koordinaten und speichert
@@ -146,10 +148,10 @@ class Service {
 
                 // Füge der Map den Punkt mit seinem Absatnd und Winkel hinzu, um Später die Punkte
                 //wie zurück (in Kugelkoordinaten) rechnen zu können
-                List<Double> list = new ArrayList<>();
-                list.add(distance);
-                list.add(angle);
-                Service.getAngleDistancePairMap().put(point,list);
+//                List<Double> list = new ArrayList<>();
+//                list.add(distance);
+//                list.add(angle);
+//                Service.getAngleDistancePairMap().put(point,list);
 
                 // Setze den ersten berechneten Punkt
                 if(Service.getFirstCartasianPoint() == null){
@@ -191,27 +193,43 @@ class Service {
         }
     }
 
-    /**
-     * Berechnet die neuen Koordinaten für einen spezifischen Zielpunkt, ausgehend vom
-     * Start-Punkt. Die Breite und länge wird in einer Map zurückgegeben
-     *
-     * @param pair
-     * @return
-     */
-    static HashMap<String, Double> calculateWGSCoordiantesOnCartesianCoordinates(Pair pair){
-        double distanceOfPair = Service.getAngleDistancePairMap().get(pair).get(0);
-        double angleOfPair = Service.getAngleDistancePairMap().get(pair).get(1);
+    static void calculateAngleAndDistanceByPoint(Pair point){
+        double x = point.getX();
+        double y = point.getY();
 
+        // Bestimme zunächst die Distanz zum ersten Punkt, mithilfe von Pythagoras
+        double distance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+
+        // Bestimme den Winkel über Atctan, da An- & Gegenkathete über Punkt bekannt
+        // Für Winkel z:
+        // tan(z) = Gegenkathete / Ankathete --> z = arctan(Gegenkathete / Ankathete)
+        double tmp = Math.toRadians(Math.atan(y / x));
+
+        // Da der berechnete Winkel entgegen dem Uhrzeigersinn ist, wir aber einen Winkel
+        // im Uhrzeigersinn benötigen, ziehen wir den berechneten Winkel von 360 ab
+        //double angle = 360 - tmp;
+        double angle = tmp;
+
+        // Füge die Ergebnise der map hinzu
+        LinkedList<Double> foo = new LinkedList<>();
+        foo.add(angle);
+        foo.add(distance);
+        Service.getAngleDistancePairMap().put(point,foo);
+    }
+
+    static void calculateWGSCoordinateByCartesianPoint(Pair point){
+        // Ermittle Winkel und Distanz, passend zum point
+        List<Double> valuesForPoint = Service.getAngleDistancePairMap().get(point);
+        Double angleOfPoint = valuesForPoint.get(0);
+        Double distanceOfPoint = valuesForPoint.get(1);
+
+        // Bestimme über Geodesy-framework die neue Position
         GeodeticCalculator calculator = new GeodeticCalculator();
         GlobalCoordinates globalCoordinates = calculator.calculateEndingGlobalCoordinates(Ellipsoid.WGS84,
-                Service.getFirstGlobalPositionOfList(), distanceOfPair, angleOfPair);
+                Service.getFirstGlobalPositionOfList(), distanceOfPoint, angleOfPoint);
 
-        HashMap<String, Double> returnMap = new HashMap<>();
-
-        returnMap.put("Latitude", globalCoordinates.getLatitude());
-        returnMap.put("Longitude", globalCoordinates.getLongitude());
-
-        return returnMap;
+        // Speichere die Werte in Map: erst lat, dann lon
+        Service.getPointToWGSMap().put(point, new Coordinates(globalCoordinates.getLatitude(), globalCoordinates.getLongitude()));
     }
 
     static void calculateWGSCoordinatesForAllCartesianPoints(){
@@ -450,5 +468,9 @@ class Service {
 
     public static LinkedList<Coordinates> getListOfWGSCoordinates() {
         return listOfWGSCoordinates;
+    }
+
+    public static LinkedHashMap<Pair, Coordinates> getPointToWGSMap() {
+        return pointToWGSMap;
     }
 }
