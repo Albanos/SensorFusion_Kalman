@@ -25,7 +25,7 @@ import model.Pair;
 
 public class ExcelFileCreator {
 
-    public void createExcelFile(Context context) {
+    public void createExcelFile() {
 
 
         // ======================Grundstruktur für den Excel-Export erzeugen

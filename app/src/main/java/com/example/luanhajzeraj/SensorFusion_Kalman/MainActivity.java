@@ -2,6 +2,7 @@ package com.example.luanhajzeraj.SensorFusion_Kalman;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -27,7 +28,6 @@ import com.instacart.library.truetime.TrueTimeRx;
 import java.sql.Timestamp;
 
 import geodesy.GlobalPosition;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import model.Coordinates;
 
@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void initializeTimeNowFrameworkForRealTime() {
         TrueTimeRx.build()
-                .initializeRx("time.microsoft.com")
+                .initializeRx("time.google.com")
                 .subscribeOn(Schedulers.io())
                 .subscribe(date -> {
                     Log.v("HI", "TrueTime was initialized and we have a time: " + date);
@@ -446,10 +446,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //                    Toast.LENGTH_LONG).show();
             Service.getThread().stop();
 
-            Toast.makeText(this,"Beginne mit Export...",Toast.LENGTH_SHORT).show();
             ExcelFileCreator export = new ExcelFileCreator();
-            export.createExcelFile(this);
-            Toast.makeText(this,"Export erfolgreich",Toast.LENGTH_SHORT).show();
+            export.createExcelFile();
+            Toast.makeText(getApplicationContext(),"Export erfolgreich",Toast.LENGTH_LONG).show();
 
         }
 
