@@ -27,6 +27,7 @@ import com.instacart.library.truetime.TrueTimeRx;
 import java.sql.Timestamp;
 
 import geodesy.GlobalPosition;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import model.Coordinates;
 
@@ -61,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void initializeTimeNowFrameworkForRealTime() {
         TrueTimeRx.build()
-                .initializeRx("time.google.com")
+                .initializeRx("time.microsoft.com")
                 .subscribeOn(Schedulers.io())
                 .subscribe(date -> {
                     Log.v("HI", "TrueTime was initialized and we have a time: " + date);
@@ -75,7 +76,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     PERMISSION_REQUEST);
         }
         //Berechtigungen wurden zuvor schon erteilt
@@ -350,12 +353,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onResume() {
         super.onResume();
+        Log.d("HI", "In onResume von MainActivity");
         if (lm != null) {
             lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_TIME_LOCATION, UPDATE_MIN_DISTANCE, locationListener);
             Log.d("LH", "In MainActivity, onResume!");
             Log.d("LH", "LocationListener reaktiviert");
         }
-        registerLinAccelerometerListener();
+        // Ist der sensorManager null, wird die app vermutlich gerade installiert, deshalb registrierung überspringen
+        if(sensorManager != null) {
+            registerLinAccelerometerListener();
+        }
     }
 
     @Override
