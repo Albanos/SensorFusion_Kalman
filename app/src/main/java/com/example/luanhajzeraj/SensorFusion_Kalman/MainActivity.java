@@ -2,7 +2,6 @@ package com.example.luanhajzeraj.SensorFusion_Kalman;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -446,9 +445,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //                    Toast.LENGTH_LONG).show();
             Service.getThread().stop();
 
-            ExcelFileCreator export = new ExcelFileCreator();
-            export.createExcelFile();
+//            ExcelFileCreator export = new ExcelFileCreator();
+//            export.createExcelFile();
+//            Toast.makeText(getApplicationContext(),"Export erfolgreich",Toast.LENGTH_LONG).show();
+
+
+            CsvFileCreator export = new CsvFileCreator();
+            export.exportOriginalCartesianPoints(getApplicationContext());
             Toast.makeText(getApplicationContext(),"Export erfolgreich",Toast.LENGTH_LONG).show();
+            Service.getThread().start();
 
         }
 
