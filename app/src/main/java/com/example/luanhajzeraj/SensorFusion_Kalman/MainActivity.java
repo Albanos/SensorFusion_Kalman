@@ -455,13 +455,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Test von Zeichnungsframeworks
         else if(view.getId() == R.id.btn_testFrameworkPlot){
             //startActivity(new Intent(MainActivity.this, testActivityWithPlotFramework.class));
+//            Toast.makeText(this,
+//                    "Letzter, echter Punkt:  " + Math.round(Service.getListOfPoints().getLast().getX())
+//                            + " ; " +  + Math.round(Service.getListOfPoints().getLast().getY()) + "("+Service.getListOfPoints().size() +")"+ "\n\n"
+//                            + "Letzter geschätzter Punkt:  "
+//                            + Service.getEstimatedPoints().getLast().getX()
+//                            + " ; " + Service.getEstimatedPoints().getLast().getY() + "(" + Service.getEstimatedPoints().size() +")"+ "\n\n"
+//                    + "Geschätzte Geschw.:  " + Service.getEstimatedVelocity().getLast().getX() + " ; " + Service.getEstimatedVelocity().getLast().getY(),
+//                    Toast.LENGTH_LONG).show();
+
             Toast.makeText(this,
-                    "Letzter, echter Punkt:  " + Math.round(Service.getListOfPoints().getLast().getX())
-                            + " ; " +  + Math.round(Service.getListOfPoints().getLast().getY()) + "("+Service.getListOfPoints().size() +")"+ "\n\n"
-                            + "Letzter geschätzter Punkt:  "
-                            + Service.getEstimatedPoints().getLast().getX()
-                            + " ; " + Service.getEstimatedPoints().getLast().getY() + "(" + Service.getEstimatedPoints().size() +")"+ "\n\n"
-                    + "Geschätzte Geschw.:  " + Service.getEstimatedVelocity().getLast().getX() + " ; " + Service.getEstimatedVelocity().getLast().getY(),
+                    "Erster kartsischer Punkt:  " + Service.getListOfPoints().getFirst().getX()
+                            + " ; " + Service.getListOfPoints().getFirst().getY(),
                     Toast.LENGTH_LONG).show();
         }
     }

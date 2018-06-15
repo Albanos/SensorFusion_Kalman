@@ -2,6 +2,7 @@ package com.example.luanhajzeraj.SensorFusion_Kalman;
 
 import android.content.Context;
 import android.os.Environment;
+import android.util.Log;
 
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.poi.hssf.usermodel.HSSFCell;
@@ -27,7 +28,7 @@ public class ExcelFileCreator {
 
     public void createExcelFile() {
 
-
+        Log.d("HI", "Anzahl, geschätzte Punkte:  " + Service.getEstimatedPoints().size());
         // ======================Grundstruktur für den Excel-Export erzeugen
         HSSFWorkbook workbook = new HSSFWorkbook();
 
