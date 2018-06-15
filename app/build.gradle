@@ -48,4 +48,6 @@ dependencies {
     implementation group: 'org.apache.poi', name: 'poi', version: '3.9'
     // Für die Zeitsyncronisation (relevant für die Messung)
     implementation 'com.github.instacart.truetime-android:library-extension-rx:3.3'
+    // Für den Export in ein CSV-file
+    implementation 'de.siegmar:fastcsv:1.0.2'
 }
