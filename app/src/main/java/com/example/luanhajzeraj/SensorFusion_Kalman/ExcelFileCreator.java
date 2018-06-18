@@ -195,7 +195,5 @@ public class ExcelFileCreator {
             }
         }
 
-        // Weiter mit dem thread
-        Service.getThread().start();
     }
 }

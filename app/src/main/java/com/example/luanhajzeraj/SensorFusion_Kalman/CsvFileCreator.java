@@ -20,8 +20,7 @@ import model.Pair;
 
 public class CsvFileCreator {
 
-    public void exportOriginalCartesianPoints(Context context) {
-        Toast.makeText(context,"Anzahl, estimatedPoints:  " + Service.getEstimatedPoints().size() + "\n" + "Time:  " + new Timestamp(System.currentTimeMillis()),Toast.LENGTH_LONG).show();
+    public void exportOriginalCartesianPoints() {
 
         String pathToFolder = generateSpecificFolder();
 
@@ -46,22 +45,8 @@ public class CsvFileCreator {
             e.printStackTrace();
         }
 
+        // Exportiere auch die geschätzten Punkte
         exportEstimatedPoints(pathToFolder);
-
-//        try (CsvAppender csvAppender = csvWriter.append(file, StandardCharsets.UTF_8)) {
-//            // header
-//            csvAppender.appendLine("header1", "header2");
-//
-//            // 1st line in one operation
-//            csvAppender.appendLine("value1", "value2");
-//
-//            // 2nd line in split operations
-//            csvAppender.appendField("value3");
-//            csvAppender.appendField("value4");
-//            csvAppender.endLine();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
 
     }
 

@@ -34,9 +34,7 @@ public class EstimationFilter {
     private static EstimationFilter instance;
 
     private KalmanFilter filter;
-    // Frage nach dt... Erstmal statisch festlegen, mit 0.1
-    //final double dt = 0.1d;
-//    final double dt = 0.000001d;
+
     final double dt = Service.getDt();
 
     // Statische Variablen, von der doku-page
@@ -72,6 +70,11 @@ public class EstimationFilter {
     private static double oldMeasurementX;
     private static double oldMeasurementY;
 
+    // Variable zum steuern der Erzeugung von Punkten, pro sekunde (in ms).
+    // Bsp.: TIME_TO_SLEEP=100 --> 10 Punkte/sek --> 10 Hz
+    private static final int TIME_TO_SLEEP = 100;
+    private static long timestamp = System.currentTimeMillis();
+
     public EstimationFilter() {
         float locationAccurancy = Service.getLocationAccurancy();
         // Standardabweichung der Beschleunigung (statisch festgelegt), für Prozessrauschen
@@ -80,8 +83,6 @@ public class EstimationFilter {
         double coordinate_x = Service.getFirstCartasianPoint().getX();
         double coordinate_y = Service.getFirstCartasianPoint().getY();
 
-//        double speed_x = 0;
-//        double speed_y = 0;
         double speed_x = Service.getSpeed_x_wgs();
         double speed_y = Service.getSpeed_y_wgs();
         float accel_x = Service.getAccel_x_wgs();
@@ -176,35 +177,23 @@ public class EstimationFilter {
     }
 
     public void makeEstimation() {
-//        double measurementX = Service.getListOfPoints().size() == 0 ? oldMeasurementX : Service.getAccel_x_wgs();
-//        double measurementY = Service.getListOfPoints().size() == 0 ? oldMeasurementY : Service.getAccel_y_wgs();
 
-        int i =1;
-        for (; ; ) {
-            if (Service.getThread().isInterrupted()) {
-                break;
+        int i = 1;
+        //for (; ; ) {
+        while(! Service.getThread().isInterrupted()){
+
+            // LAZY-WAITING:
+            // Prüfe, ob TIME_TO_SLEEP vergangen ist oder nicht. Wenn nicht, springe zur nächsten Iteration
+            if ((System.currentTimeMillis() - timestamp) < TIME_TO_SLEEP) {
+                continue;
             }
+
+            timestamp = System.currentTimeMillis();
+
             Log.d("HI", "Iteration, Nr.:  " + i++);
             //filter.predict(u);
             filter.predict();
 
-            //RealVector z = new ArrayRealVector(new double[] {Service.getAccel_x_wgs(), Service.getAccel_y_wgs()});
-            //RealVector z = new ArrayRealVector(new double[] {measurementX, measurementY});
-
-//            double measurementX = Service.getListOfPoints().size() == 0 ? oldMeasurementX : Service.getListOfPoints().getLast().getX();
-//            double measurementY = Service.getListOfPoints().size() == 0 ? oldMeasurementY : Service.getListOfPoints().getLast().getY();
-//
-//            oldMeasurementX = measurementX;
-//            oldMeasurementY = measurementY;
-
-//            RealVector z = new ArrayRealVector(new double[] {Service.getListOfPoints().getLast().getX(),
-//                                                Service.getListOfPoints().getLast().getY()});
-            //z = new ArrayRealVector(new double[] {Service.getAccel_x_wgs(),
-            //                                  Service.getAccel_y_wgs()});
-
-//            currentMeasurment = new ArrayRealVector(new double[]{Service.getListOfPoints().getLast().getX(),
-//                                                    Service.getListOfPoints().getLast().getY(),
-//                                                    Service.getSpeed_x_wgs(), Service.getSpeed_y_wgs()});
 
             currentMeasurment = new ArrayRealVector(new double[]{Service.getListOfPoints().getLast().getX(),
                     Service.getListOfPoints().getLast().getY()});
@@ -225,7 +214,7 @@ public class EstimationFilter {
             double cartesianY = Service.getListOfPoints().size() == 0 ? 0 : Service.getListOfPoints().getLast().getY();
             //String timestamp = (String) Service.getListOfPoints().getLast().getTimestamp();
 
-            Log.d("HI", "Geschätzter Punkt:  " + estimatedPosition_x + " ; " + estimatedPosition_y + " Zur Zeit (jetzt):  "+ new Timestamp(System.currentTimeMillis()));
+            Log.d("HI", "Geschätzter Punkt:  " + estimatedPosition_x + " ; " + estimatedPosition_y + " Zur Zeit (jetzt):  " + new Timestamp(System.currentTimeMillis()));
             Log.d("HI", "Echter Punkt:  " + cartesianX + " ; " + cartesianY);
 
             Pair estimatedPoint = new Pair(estimatedPosition_x, estimatedPosition_y);
@@ -234,11 +223,15 @@ public class EstimationFilter {
             //Service.getEstimatedPoints().add(new Pair(estimatedPosition_x, estimatedPosition_y));
             Service.getEstimatedPoints().add(estimatedPoint);
 
-            // Berechne Winkel und Distanz des geschätzten Punktes, zum Startpunkt (für spätere Rückrichtung in Lat/Lon)
-            Service.calculateAngleAndDistanceByPoint(estimatedPoint);
+            // Berechne Lat/Lon nur für die Punkte, die ungleich dem ersten sind
+            Pair first = Service.getListOfPoints().getFirst();
+            if(estimatedPoint.getX() != first.getX() && estimatedPoint.getY() != first.getY()) {
+                // Berechne Winkel und Distanz des geschätzten Punktes, zum Startpunkt (für spätere Rückrichtung in Lat/Lon)
+                Service.calculateAngleAndDistanceByPoint(estimatedPoint);
 
-            // Bestimme Lat/Lon von dem berechneten cartesischen Punkt
-            Service.calculateWGSCoordinateByCartesianPoint(estimatedPoint);
+                // Bestimme Lat/Lon von dem berechneten cartesischen Punkt
+                Service.calculateWGSCoordinateByCartesianPoint(estimatedPoint);
+            }
 
             // Füge die geschätzte Geschwindigkeit der liste hinzu
             Service.getEstimatedVelocity().add(new Pair(filter.getStateEstimation()[2], filter.getStateEstimation()[3]));
@@ -246,20 +239,9 @@ public class EstimationFilter {
 
         }
 
-        Log.d("HI", "=============================Letzter, echter:  " + Service.getListOfPoints().getLast().getX() + " ; " + Service.getListOfPoints().getLast().getY());
-        Log.d("HI", "=============================Letzter, geschätzter:  " + Service.getEstimatedPoints().getLast().getX() + " ; " + Service.getEstimatedPoints().getLast().getY());
-//    double estimatedPosition_x = filter.getStateEstimation()[0];
-//    double estimatedPosition_y = filter.getStateEstimation()[1];
-//
-//    // Füge die geschätzten Punkte der Liste hinzu, um sie später zeichnen zu können
-//    Service.getEstimatedPoints().add(new Pair(estimatedPosition_x,estimatedPosition_y));
+        //Log.d("HI", "=============================Letzter, echter:  " + Service.getListOfPoints().getLast().getX() + " ; " + Service.getListOfPoints().getLast().getY());
+        //Log.d("HI", "=============================Letzter, geschätzter:  " + Service.getEstimatedPoints().getLast().getX() + " ; " + Service.getEstimatedPoints().getLast().getY());
 
-
-//        ArrayList<Double> returnList = new ArrayList<>();
-//        returnList.add(position);
-//        returnList.add(velocity);
-//
-//        return returnList;
     }
 
     public static synchronized EstimationFilter getInstance() {

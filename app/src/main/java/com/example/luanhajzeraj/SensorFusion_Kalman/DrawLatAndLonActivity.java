@@ -7,8 +7,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import model.FilterThread;
-
 public class DrawLatAndLonActivity extends AppCompatActivity {
     private static FilterThread thread = new FilterThread();
 

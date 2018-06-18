@@ -1,4 +1,4 @@
-package model;
+package com.example.luanhajzeraj.SensorFusion_Kalman;
 
 import android.util.Log;
 
@@ -10,14 +10,14 @@ public class FilterThread implements Runnable {
 
 
     public void start() {
-        if( backgroundThread == null ) {
-            backgroundThread = new Thread( this );
+        if (backgroundThread == null) {
+            backgroundThread = new Thread(this);
             backgroundThread.start();
         }
     }
 
     public void stop() {
-        if( backgroundThread != null ) {
+        if (backgroundThread != null) {
             backgroundThread.interrupt();
             Log.d("HI", "Thread angehalten");
         }
@@ -29,12 +29,12 @@ public class FilterThread implements Runnable {
                 filter = new EstimationFilter();
                 filter.makeEstimation();
             }
-        }
-        finally {
+        } finally {
             backgroundThread = null;
         }
     }
-    public boolean isInterrupted(){
+
+    public boolean isInterrupted() {
         return backgroundThread.isInterrupted() ? true : false;
     }
 

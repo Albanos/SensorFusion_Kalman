@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private final int PERMISSION_REQUEST = 0;
     private static int demoGNSSCounter = 0;
     private static long oldTimestamp = 0;
+    private static boolean semaphoreForFilterStart = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +105,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 latitude = location.getLatitude();
                 altitude = location.getAltitude();
 
+                //Log.d("HI", "Accurancy, Location:  " + location.getAccuracy());
+
                 // Merke dir alle Koordinaten die rein kommen
                 Service.getListOfWGSCoordinates().add(new Coordinates(latitude,longitude,altitude));
 
@@ -134,6 +137,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 Service.calculateCartesianPointForLastKnownPosition();
                 if(Service.getListOfPoints().size() >= 1) {
                     Service.getThread().start();
+                    //semaphoreForFilterStart = true;
                 }
             }
 
@@ -445,14 +449,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //                    Toast.LENGTH_LONG).show();
             Service.getThread().stop();
 
-//            ExcelFileCreator export = new ExcelFileCreator();
-//            export.createExcelFile();
-//            Toast.makeText(getApplicationContext(),"Export erfolgreich",Toast.LENGTH_LONG).show();
-
-
-            CsvFileCreator export = new CsvFileCreator();
-            export.exportOriginalCartesianPoints(getApplicationContext());
+            ExcelFileCreator export = new ExcelFileCreator();
+            export.createExcelFile();
             Toast.makeText(getApplicationContext(),"Export erfolgreich",Toast.LENGTH_LONG).show();
+
+
+//            CsvFileCreator export = new CsvFileCreator();
+//            export.exportOriginalCartesianPoints();
+//            Toast.makeText(getApplicationContext(),"Export erfolgreich",Toast.LENGTH_LONG).show();
             Service.getThread().start();
 
         }

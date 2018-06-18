@@ -13,7 +13,6 @@ import geodesy.GeodeticMeasurement;
 import geodesy.GlobalCoordinates;
 import geodesy.GlobalPosition;
 import model.Coordinates;
-import model.FilterThread;
 import model.Pair;
 
 /**
@@ -194,8 +193,15 @@ class Service {
     }
 
     static void calculateAngleAndDistanceByPoint(Pair point){
-        double x = point.getX();
-        double y = point.getY();
+        double pointX = point.getX();
+        double pointY = point.getY();
+
+        // Ermittle die Differenz zum ersten Punkt
+        double firstPointX = Service.getListOfPoints().getFirst().getX();
+        double firstPointY = Service.getListOfPoints().getFirst().getY();
+
+        double x = Math.abs(firstPointX - pointX);
+        double y = Math.abs(firstPointY - pointY);
 
         // Bestimme zunächst die Distanz zum ersten Punkt, mithilfe von Pythagoras
         double distance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
@@ -207,7 +213,7 @@ class Service {
 
         // Da der berechnete Winkel entgegen dem Uhrzeigersinn ist, wir aber einen Winkel
         // im Uhrzeigersinn benötigen, ziehen wir den berechneten Winkel von 360 ab
-        //double angle = 360 - tmp;
+        //double angle = 180 - tmp;
         double angle = tmp;
 
         // Füge die Ergebnise der map hinzu
@@ -226,7 +232,7 @@ class Service {
         // Bestimme über Geodesy-framework die neue Position
         GeodeticCalculator calculator = new GeodeticCalculator();
         GlobalCoordinates globalCoordinates = calculator.calculateEndingGlobalCoordinates(Ellipsoid.WGS84,
-                Service.getFirstGlobalPositionOfList(), distanceOfPoint, angleOfPoint);
+                Service.getFirstGlobalPositionOfList(), angleOfPoint, distanceOfPoint);
 
         // Speichere die Werte in Map: erst lat, dann lon
         Service.getPointToWGSMap().put(point, new Coordinates(globalCoordinates.getLatitude(), globalCoordinates.getLongitude()));
