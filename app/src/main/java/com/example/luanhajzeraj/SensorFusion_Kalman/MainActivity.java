@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private final int PERMISSION_REQUEST = 0;
     private static int demoGNSSCounter = 0;
     private static long oldTimestamp = 0;
-    private static boolean semaphoreForFilterStart = false;
+    private static boolean locationAccurancyGood = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,44 +101,48 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                longitude = location.getLongitude();
-                latitude = location.getLatitude();
-                altitude = location.getAltitude();
+                //if(location.getAccuracy() <= 5) {
+//                    if(! locationAccurancyGood) {
+//                        Toast.makeText(getApplicationContext(), "GNSS-Accurancy good", Toast.LENGTH_SHORT).show();
+//                        locationAccurancyGood = true;
+//                    }
 
-                //Log.d("HI", "Accurancy, Location:  " + location.getAccuracy());
+                    longitude = location.getLongitude();
+                    latitude = location.getLatitude();
+                    altitude = location.getAltitude();
 
-                // Merke dir alle Koordinaten die rein kommen
-                Service.getListOfWGSCoordinates().add(new Coordinates(latitude,longitude,altitude));
+                    // Merke dir alle Koordinaten die rein kommen
+                    Service.getListOfWGSCoordinates().add(new Coordinates(latitude, longitude, altitude));
 
-                // Setze die Geschwindigkeitsgenauigkeit, um diese im Filter nutzen zu können --> NICHT VERFÜGBAR!!
-                //Service.setSpeedAccurancy_wgs(location.getSpeedAccuracyMetersPerSecond());
+                    // Setze die Geschwindigkeitsgenauigkeit, um diese im Filter nutzen zu können --> NICHT VERFÜGBAR!!
+                    //Service.setSpeedAccurancy_wgs(location.getSpeedAccuracyMetersPerSecond());
 
-                // Berechne die WGS-Geschwindigkeit, auf Basis des Betrages der Geschwindigkeit:
-                // Berechnung erfolgt ähnlich den kartesischen Koordinaten
-                // speed_x = speed_location * sin( rad(bearing) )
-                // speed_y = speed_location * cos( rad(bearing) )
-                float speedOfGnss = location.hasSpeed() ? location.getSpeed() : 0;
-                float bearing = location.hasBearing() ? location.getBearing() : 1;
+                    // Berechne die WGS-Geschwindigkeit, auf Basis des Betrages der Geschwindigkeit:
+                    // Berechnung erfolgt ähnlich den kartesischen Koordinaten
+                    // speed_x = speed_location * sin( rad(bearing) )
+                    // speed_y = speed_location * cos( rad(bearing) )
+                    float speedOfGnss = location.hasSpeed() ? location.getSpeed() : 0;
+                    float bearing = location.hasBearing() ? location.getBearing() : 1;
 
-                Service.setSpeed_x_wgs(speedOfGnss * Math.sin(Math.toRadians(bearing)));
-                Service.setSpeed_y_wgs(speedOfGnss * Math.cos(Math.toRadians(bearing)));
+                    Service.setSpeed_x_wgs(speedOfGnss * Math.sin(Math.toRadians(bearing)));
+                    Service.setSpeed_y_wgs(speedOfGnss * Math.cos(Math.toRadians(bearing)));
 
-                // Setze die locationgenauigkeit im Service, um diese später für den Filter zu verwenden
-                Service.setLocationAccurancy(location.getAccuracy());
+                    // Setze die locationgenauigkeit im Service, um diese später für den Filter zu verwenden
+                    Service.setLocationAccurancy(location.getAccuracy());
 
-                // Als Geschwindigkeit wird zunächst die GNSS-Geschwindigkeit genutzt (in m/s)
-                speed = location.hasSpeed() ? location.getSpeed() : -1;
+                    // Als Geschwindigkeit wird zunächst die GNSS-Geschwindigkeit genutzt (in m/s)
+                    speed = location.hasSpeed() ? location.getSpeed() : -1;
 
-                createGlobalPositionForDrawLatAndLon(latitude, longitude, altitude);
-                writeGPSValuesToScreen(latitude, longitude, altitude, speed);
-                Log.d("LH", "GPS-Update, time:  " + new Timestamp(System.currentTimeMillis()));
+                    createGlobalPositionForDrawLatAndLon(latitude, longitude, altitude);
+                    writeGPSValuesToScreen(latitude, longitude, altitude, speed);
+                    Log.d("LH", "GPS-Update, time:  " + new Timestamp(System.currentTimeMillis()));
 
-                // TEST
-                Service.calculateCartesianPointForLastKnownPosition();
-                if(Service.getListOfPoints().size() >= 1) {
-                    Service.getThread().start();
-                    //semaphoreForFilterStart = true;
-                }
+                    // Starte den Filter in einem separaten Thread, sobald ein kartesischen Punkt existiert
+                    Service.calculateCartesianPointForLastKnownPosition();
+                    if (Service.getListOfPoints().size() >= 1) {
+                        Service.getThread().start();
+                    }
+                //}
             }
 
             @Override
@@ -410,18 +414,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             // (In Richtung osten ; Rathaus), jeweills mit 5m, 10m und 15m vom ersten Punkt entfernt
             // der letzte, fünfte Punkt, befindet sich in 180 grad unter Punkt 1, 10m Abstand
 
-            latitude = new double[]{51.311996, 51.311991, 51.312006, 51.312000, 51.311902}[demoGNSSCounter];
-            longitude = new double[]{9.473645, 9.473719, 9.473798, 9.473864, 9.473643}[demoGNSSCounter];
+//            latitude = new double[]{51.311996, 51.311991, 51.312006, 51.312000, 51.311902}[demoGNSSCounter];
+//            longitude = new double[]{9.473645, 9.473719, 9.473798, 9.473864, 9.473643}[demoGNSSCounter];
+//            altitude = 211;
+//            speed = 0f;
+
+            latitude = new double[]{51.196046, 51.196041, 51.196034, 51.196030}[demoGNSSCounter];
+            longitude = new double[]{9.728800, 9.728893, 9.728991, 9.729143}[demoGNSSCounter];
             altitude = 211;
             speed = 0f;
 
-            if (++demoGNSSCounter > 4) {
+            if (++demoGNSSCounter > 3) {
                 // Wenn counter größer als 3: mache den Button unsichtbar, also nicht drückbar
                 findViewById(R.id.btn_generateTestGNSS).setVisibility(View.INVISIBLE);
             }
 
             createGlobalPositionForDrawLatAndLon(latitude, longitude, altitude);
+            Service.calculateCartesianPointForLastKnownPosition();
             writeGPSValuesToScreen(latitude, longitude, altitude, speed);
+
+            if(Service.getListOfPoints().size() > 1) {
+                Service.calculateAngleAndDistanceByPoint(Service.getListOfPoints().get(1));
+                Service.calculateWGSCoordinateByCartesianPoint(Service.getListOfPoints().get(1));
+                Coordinates coordinates = Service.getPointToWGSMap().get(Service.getListOfPoints().get(1));
+                double latitude = coordinates.getLatitude();
+                double longitude = coordinates.getLongitude();
+                System.out.println();
+            }
+
         }
 
         // Starte den GNSS-Listener, also mit live-Daten

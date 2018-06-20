@@ -209,12 +209,22 @@ class Service {
         // Bestimme den Winkel über Atctan, da An- & Gegenkathete über Punkt bekannt
         // Für Winkel z:
         // tan(z) = Gegenkathete / Ankathete --> z = arctan(Gegenkathete / Ankathete)
-        double tmp = Math.toRadians(Math.atan(y / x));
+        //double tmp = Math.toRadians(Math.atan( Math.abs(y / x)));
+        double angle = 0;
+        if(y == 0 && x > 0){
+            angle = Math.toDegrees( Math.PI / 2 );
+        }
+        else if(y == 0 && x < 0){
+            angle = Math.toDegrees( (Math.PI / 2) * -1 );
+        }
+        else if( y > 0){
+            angle = Math.toDegrees( Math.atan(x / y) );
+        }
 
-        // Da der berechnete Winkel entgegen dem Uhrzeigersinn ist, wir aber einen Winkel
-        // im Uhrzeigersinn benötigen, ziehen wir den berechneten Winkel von 360 ab
-        //double angle = 180 - tmp;
-        double angle = tmp;
+        else if(y < 0){
+            angle = Math.toDegrees( Math.atan( x / y ) + Math.toDegrees(Math.PI) );
+        }
+
 
         // Füge die Ergebnise der map hinzu
         LinkedList<Double> foo = new LinkedList<>();

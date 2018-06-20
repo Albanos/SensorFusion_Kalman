@@ -87,6 +87,8 @@ public class EstimationFilter {
         double speed_y = Service.getSpeed_y_wgs();
         float accel_x = Service.getAccel_x_wgs();
         float accel_y = Service.getAccel_y_wgs();
+//        float accel_x = -0.5f;
+//        float accel_y = 0.5f;
 
         x = new ArrayRealVector(new double[]{coordinate_x, coordinate_y, speed_x, speed_y});
         u = new ArrayRealVector(new double[]{accel_x, accel_y});
