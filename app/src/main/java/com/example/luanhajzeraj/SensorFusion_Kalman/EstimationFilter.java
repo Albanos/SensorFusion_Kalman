@@ -156,6 +156,7 @@ public class EstimationFilter {
 //                {0, speedVarianz}
 //        });
 
+
         P = new Array2DRowRealMatrix(new double[][]{
                 {10, 0, 0, 0},
                 {0, 10, 0, 0},
@@ -196,9 +197,14 @@ public class EstimationFilter {
             //filter.predict(u);
             filter.predict();
 
+            Log.d("HI", "Dimension, R, Zeilen:  " + R.getRowDimension() + " ; Spalten:  " + R.getColumnDimension());
 
             currentMeasurment = new ArrayRealVector(new double[]{Service.getListOfPoints().getLast().getX(),
                     Service.getListOfPoints().getLast().getY()});
+//            currentMeasurment = new ArrayRealVector(new double[]{
+//                    Service.getListOfPoints().getLast().getX(),
+//                    Service.getListOfPoints().getLast().getY(),
+//                    Service.getSpeed_x_wgs(), Service.getSpeed_y_wgs()});
 
             // Nur wenn eine neue Messung vorliegt, wird ein Korrektur-schritt vorgenommen
             if (!currentMeasurment.equals(z)) {

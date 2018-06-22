@@ -197,19 +197,21 @@ class Service {
         double pointY = point.getY();
 
         // Ermittle die Differenz zum ersten Punkt
-        double firstPointX = Service.getListOfPoints().getFirst().getX();
-        double firstPointY = Service.getListOfPoints().getFirst().getY();
+//        double firstPointX = Service.getListOfPoints().getFirst().getX();
+//        double firstPointY = Service.getListOfPoints().getFirst().getY();
+        double firstPointX = Service.getFirstCartasianPoint().getX();
+        double firstPointY = Service.getFirstCartasianPoint().getY();
 
-        double x = Math.abs(firstPointX - pointX);
-        double y = Math.abs(firstPointY - pointY);
+//        double x = Math.abs(firstPointX - pointX);
+//        double y = Math.abs(firstPointY - pointY);
+        double x = firstPointX - pointX;
+        double y = firstPointY - pointY;
+
 
         // Bestimme zunächst die Distanz zum ersten Punkt, mithilfe von Pythagoras
         double distance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
 
         // Bestimme den Winkel über Atctan, da An- & Gegenkathete über Punkt bekannt
-        // Für Winkel z:
-        // tan(z) = Gegenkathete / Ankathete --> z = arctan(Gegenkathete / Ankathete)
-        //double tmp = Math.toRadians(Math.atan( Math.abs(y / x)));
         double angle = 0;
         if(y == 0 && x > 0){
             angle = Math.toDegrees( Math.PI / 2 );
@@ -218,11 +220,13 @@ class Service {
             angle = Math.toDegrees( (Math.PI / 2) * -1 );
         }
         else if( y > 0){
-            angle = Math.toDegrees( Math.atan(x / y) );
+            //angle = Math.toDegrees( Math.atan(x / y));
+            angle = Math.toDegrees( Math.atan(x / y) + Math.PI);
         }
 
         else if(y < 0){
-            angle = Math.toDegrees( Math.atan( x / y ) + Math.toDegrees(Math.PI) );
+            angle = Math.toDegrees( Math.atan( x / y ) );
+            //angle = Math.toDegrees( Math.atan( x / y ) + Math.PI );
         }
 
 
