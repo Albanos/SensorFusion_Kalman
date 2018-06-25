@@ -67,13 +67,16 @@ public class ExcelFileCreator {
         cell_2C_sheet2.setCellValue(new HSSFRichTextString("Y"));
 
         HSSFCell cell_2D_sheet2 = sheet2_row2.createCell(3);
-        cell_2D_sheet2.setCellValue(new HSSFRichTextString("VectorU"));
+        cell_2D_sheet2.setCellValue(new HSSFRichTextString("VectorU_x"));
 
         HSSFCell cell_2E_sheet2 = sheet2_row2.createCell(4);
-        cell_2E_sheet2.setCellValue(new HSSFRichTextString("Velocity_X"));
+        cell_2E_sheet2.setCellValue(new HSSFRichTextString("VectorU_y"));
 
         HSSFCell cell_2F_sheet2 = sheet2_row2.createCell(5);
-        cell_2F_sheet2.setCellValue(new HSSFRichTextString("Velocity_Y"));
+        cell_2F_sheet2.setCellValue(new HSSFRichTextString("Velocity_X"));
+
+        HSSFCell cell_2G_sheet2 = sheet2_row2.createCell(6);
+        cell_2G_sheet2.setCellValue(new HSSFRichTextString("Velocity_Y"));
 
         HSSFRow sheet3_row1 = thirdSheet.createRow(0);
         HSSFCell cell_1A_sheet3 = sheet3_row1.createCell(0);
@@ -119,29 +122,36 @@ public class ExcelFileCreator {
             long timestamp = p.getTimestamp();
             Double x = p.getX();
             Double y = p.getY();
-            RealVector currentU = Service.getThread().getFilter().getU();
+            //RealVector currentU = Service.getThread().getFilter().getU();
+            LinkedList<Pair> foo = Service.getListWithUValues();
+            double xValueOfU = Service.getListWithUValues().get(j).getX();
+            double yValueOfU = Service.getListWithUValues().get(j).getY();
             double estimatedVelocityX = Service.getEstimatedVelocity().get(j).getX();
             double estimatedVelocityY = Service.getEstimatedVelocity().get(j).getY();
 
             // Zeichne ausserdem noch die Globalen Koordinaten des jeweils geschätzten Punktes
-            double latitudeOfP = Service.getPointToWGSMap().get(p).getLatitude();
-            double longitudeOfP = Service.getPointToWGSMap().get(p).getLongitude();
+            // Existiert für diesen Punkt kein Eintrag in der Liste ist es der erste Punkt (für ihn werden keine WGS-Koordinaten berechnet)
+            double latitudeOfP = Service.getPointToWGSMap().get(p) == null ? 0 : Service.getPointToWGSMap().get(p).getLatitude();
+            double longitudeOfP = Service.getPointToWGSMap().get(p) == null ? 0 : Service.getPointToWGSMap().get(p).getLongitude();
 
 
             HSSFRow currentRow = secondSheet.createRow(i);
             HSSFCell estimatedTimestamp = currentRow.createCell(0);
             HSSFCell estimatedX = currentRow.createCell(1);
             HSSFCell estimatedY = currentRow.createCell(2);
-            HSSFCell vectorU = currentRow.createCell(3);
-            HSSFCell velocityX = currentRow.createCell(4);
-            HSSFCell velocityY = currentRow.createCell(5);
-            HSSFCell latitudeOfPoint = currentRow.createCell(6);
-            HSSFCell longitudeOfPoint = currentRow.createCell(7);
+            HSSFCell vectorUX = currentRow.createCell(3);
+            HSSFCell vectorUY = currentRow.createCell(4);
+            HSSFCell velocityX = currentRow.createCell(5);
+            HSSFCell velocityY = currentRow.createCell(6);
+            HSSFCell latitudeOfPoint = currentRow.createCell(7);
+            HSSFCell longitudeOfPoint = currentRow.createCell(8);
 
             estimatedTimestamp.setCellValue(timestamp);
             estimatedX.setCellValue(x);
             estimatedY.setCellValue(y);
-            vectorU.setCellValue(currentU.toString());
+            //vectorU.setCellValue(currentU.toString());
+            vectorUX.setCellValue(xValueOfU);
+            vectorUY.setCellValue(yValueOfU);
             velocityX.setCellValue(estimatedVelocityX);
             velocityY.setCellValue(estimatedVelocityY);
             latitudeOfPoint.setCellValue(latitudeOfP);

@@ -67,9 +67,6 @@ public class EstimationFilter {
     private ProcessModel pm;
     private MeasurementModel mm;
 
-    private static double oldMeasurementX;
-    private static double oldMeasurementY;
-
     // Variable zum steuern der Erzeugung von Punkten, pro sekunde (in ms).
     // Bsp.: TIME_TO_SLEEP=100 --> 10 Punkte/sek --> 10 Hz
     private static final int TIME_TO_SLEEP = 100;
@@ -78,7 +75,8 @@ public class EstimationFilter {
     public EstimationFilter() {
         float locationAccurancy = Service.getLocationAccurancy();
         // Standardabweichung der Beschleunigung (statisch festgelegt), für Prozessrauschen
-        final double sigmaAccel = 1f;
+        //final float sigmaAccel = 1f;
+        final float sigmaAccel = 8f;
 
         double coordinate_x = Service.getFirstCartasianPoint().getX();
         double coordinate_y = Service.getFirstCartasianPoint().getY();
@@ -122,39 +120,53 @@ public class EstimationFilter {
 //                {0, 0}
 //        });
 
-        H = new Array2DRowRealMatrix(new double[][]{
-                {1, 0, 0, 0},
-                {0, 1, 0, 0}
-        });
 //        H = new Array2DRowRealMatrix(new double[][]{
 //                {1, 0, 0, 0},
-//                {0, 1, 0, 0},
-//                {0, 0, 1, 0},
-//                {0, 0, 0, 1}
+//                {0, 1, 0, 0}
 //        });
+        H = new Array2DRowRealMatrix(new double[][]{
+                {1, 0, 0, 0},
+                {0, 1, 0, 0},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1}
+        });
 
         // Standardabweichung für Beschleunigung ist statisch 1, deshalb ignoriert
+        // Standardabweichung soll bei zusätzlicher Messung von Geschwindigkeit mitberücksichtigt,
+        // deshalb wird sigma nachobengesetzt
+//        Q = new Array2DRowRealMatrix(new double[][]{
+//                {1 / 4 * Math.pow(dt, 4), 1 / 4 * Math.pow(dt, 4), 1 / 2 * Math.pow(dt, 3), 1 / 2 * Math.pow(dt, 3)},
+//                {1 / 4 * Math.pow(dt, 4), 1 / 4 * Math.pow(dt, 4), 1 / 2 * Math.pow(dt, 3), 1 / 2 * Math.pow(dt, 3)},
+//                {1 / 2 * Math.pow(dt, 3), 1 / 2 * Math.pow(dt, 3), Math.pow(dt, 2), Math.pow(dt, 2)},
+//                {1 / 2 * Math.pow(dt, 3), 1 / 2 * Math.pow(dt, 3), Math.pow(dt, 2), Math.pow(dt, 2)}
+//        });
         Q = new Array2DRowRealMatrix(new double[][]{
                 {1 / 4 * Math.pow(dt, 4), 1 / 4 * Math.pow(dt, 4), 1 / 2 * Math.pow(dt, 3), 1 / 2 * Math.pow(dt, 3)},
                 {1 / 4 * Math.pow(dt, 4), 1 / 4 * Math.pow(dt, 4), 1 / 2 * Math.pow(dt, 3), 1 / 2 * Math.pow(dt, 3)},
-                {1 / 2 * Math.pow(dt, 3), 1 / 2 * Math.pow(dt, 3), Math.pow(dt, 2), Math.pow(dt, 2)},
-                {1 / 2 * Math.pow(dt, 3), 1 / 2 * Math.pow(dt, 3), Math.pow(dt, 2), Math.pow(dt, 2)}
+                {1 / 2 * Math.pow(dt, 3), 1 / 2 * Math.pow(dt, 3), Math.pow(dt, 2) * Math.pow(sigmaAccel,2), Math.pow(dt, 2)},
+                {1 / 2 * Math.pow(dt, 3), 1 / 2 * Math.pow(dt, 3), Math.pow(dt, 2), Math.pow(dt, 2) * Math.pow(sigmaAccel,2)}
         });
 
 
-        double locationVarianz = Math.pow(locationAccurancy, 2);
-        R = new Array2DRowRealMatrix(new double[][]{
-                {locationVarianz, 0},
-                {0, locationVarianz}
-        });
 //        double locationVarianz = Math.pow(locationAccurancy, 2);
-//        double speedVarianz = Math.pow(5,2); // speedVarianz wird statisch festgelegt, da Geschw.-Genauigkeit nicht verfügbar
+//        R = new Array2DRowRealMatrix(new double[][]{
+//                {locationVarianz, 0},
+//                {0, locationVarianz}
+//        });
+        double locationVarianz = Math.pow(locationAccurancy, 2);
+        double speedVarianz = Math.pow(0.5,2); // speedVarianz wird statisch festgelegt, da Geschw.-Genauigkeit nicht verfügbar
 //        R = new Array2DRowRealMatrix(new double[][]{
 //                {locationVarianz, 0},
 //                {0, locationVarianz},
 //                {speedVarianz, 0},
 //                {0, speedVarianz}
 //        });
+        R = new Array2DRowRealMatrix(new double[][]{
+                {locationVarianz, 0, 0, 0},
+                {0, locationVarianz, 0, 0},
+                {0, 0, speedVarianz, 0},
+                {0, 0, 0, speedVarianz}
+        });
 
 
         P = new Array2DRowRealMatrix(new double[][]{
@@ -164,12 +176,12 @@ public class EstimationFilter {
                 {0, 0, 0, 10}
         });
 
-//        z = new ArrayRealVector(new double[]{Service.getListOfPoints().getLast().getX(),
-//                                            Service.getListOfPoints().getLast().getY(),
-//                                            Service.getSpeed_x_wgs(), Service.getSpeed_y_wgs()});
-
         z = new ArrayRealVector(new double[]{Service.getListOfPoints().getLast().getX(),
-                Service.getListOfPoints().getLast().getY()});
+                                            Service.getListOfPoints().getLast().getY(),
+                                            Service.getSpeed_x_wgs(), Service.getSpeed_y_wgs()});
+
+//        z = new ArrayRealVector(new double[]{Service.getListOfPoints().getLast().getX(),
+//                Service.getListOfPoints().getLast().getY()});
 
         currentMeasurment = z;
 
@@ -193,18 +205,25 @@ public class EstimationFilter {
 
             timestamp = System.currentTimeMillis();
 
+            // Aktualisiere u
+            u.setEntry(0,Service.getAccel_x_wgs());
+            u.setEntry(1,Service.getAccel_y_wgs());
+
+            // Füge den gegenwärtigen u-Vektor der Liste hinzu (für späteren Export)
+            Service.getListWithUValues().add(new Pair(u.getEntry(0), u.getEntry(1)));
+
             Log.d("HI", "Iteration, Nr.:  " + i++);
-            //filter.predict(u);
-            filter.predict();
+            filter.predict(u);
+            //filter.predict();
 
             Log.d("HI", "Dimension, R, Zeilen:  " + R.getRowDimension() + " ; Spalten:  " + R.getColumnDimension());
 
-            currentMeasurment = new ArrayRealVector(new double[]{Service.getListOfPoints().getLast().getX(),
-                    Service.getListOfPoints().getLast().getY()});
-//            currentMeasurment = new ArrayRealVector(new double[]{
-//                    Service.getListOfPoints().getLast().getX(),
-//                    Service.getListOfPoints().getLast().getY(),
-//                    Service.getSpeed_x_wgs(), Service.getSpeed_y_wgs()});
+//            currentMeasurment = new ArrayRealVector(new double[]{Service.getListOfPoints().getLast().getX(),
+//                    Service.getListOfPoints().getLast().getY()});
+            currentMeasurment = new ArrayRealVector(new double[]{
+                    Service.getListOfPoints().getLast().getX(),
+                    Service.getListOfPoints().getLast().getY(),
+                    Service.getSpeed_x_wgs(), Service.getSpeed_y_wgs()});
 
             // Nur wenn eine neue Messung vorliegt, wird ein Korrektur-schritt vorgenommen
             if (!currentMeasurment.equals(z)) {
@@ -243,7 +262,6 @@ public class EstimationFilter {
 
             // Füge die geschätzte Geschwindigkeit der liste hinzu
             Service.getEstimatedVelocity().add(new Pair(filter.getStateEstimation()[2], filter.getStateEstimation()[3]));
-
 
         }
 

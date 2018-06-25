@@ -50,6 +50,7 @@ class Service {
     private static double speedAccurancy_wgs =0;
     private static LinkedList<Coordinates> listOfWGSCoordinates = new LinkedList<>();
     private static LinkedHashMap<Pair, Coordinates> pointToWGSMap = new LinkedHashMap<>();
+    private static LinkedList<Pair> listWithUValues = new LinkedList<>();
 
     /**
      * Berechnet auf Basis der Liste von GlobalPositions die kartesischen Koordinaten und speichert
@@ -492,5 +493,9 @@ class Service {
 
     public static LinkedHashMap<Pair, Coordinates> getPointToWGSMap() {
         return pointToWGSMap;
+    }
+
+    public static LinkedList<Pair> getListWithUValues() {
+        return listWithUValues;
     }
 }

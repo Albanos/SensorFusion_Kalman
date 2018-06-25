@@ -51,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private static int demoGNSSCounter = 0;
     private static long oldTimestamp = 0;
     private static boolean locationAccurancyGood = false;
+    private static long timestampForIMU =System.currentTimeMillis();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -285,8 +286,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Gerätebeschleunigung
         // Von: https://stackoverflow.com/a/36477630
         if ((gravityValues != null) && (magneticValues != null)
-                //&& (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)) {
-                && (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION)) {
+                && (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)) {
+                //&& (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION)) {
 
             // Setze dt im Service und greife im Filter darauf zu
             Service.setDt(Service.getOldDt() == 0 ? 0.1f : (event.timestamp - Service.getOldDt()) / 1000000000.0f);
@@ -311,14 +312,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             android.opengl.Matrix.invertM(inv, 0, R, 0);
             android.opengl.Matrix.multiplyMV(earthAcc, 0, inv, 0, deviceRelativeAcceleration, 0);
-            writeAccelerometerValuesToScreen(earthAcc[0], earthAcc[1]);
-            //writeAccelerometerValuesToScreen(earthAcc[1], earthAcc[2]);
 
-            // Aktualisiere die Werte im Service
-//            Service.setAccel_x_wgs(earthAcc[0]);
-//            Service.setAccel_y_wgs(earthAcc[2]);
-            Service.setAccel_x_wgs(earthAcc[0]);
-            Service.setAccel_y_wgs(earthAcc[1]);
+            // Test: wir setzen nur Werte in einem bestimmten Takt, um eine Überprüfung von IMU durchzuführen
+            //if((System.currentTimeMillis() - timestampForIMU) >= 500) {
+                timestampForIMU = System.currentTimeMillis();
+                writeAccelerometerValuesToScreen(earthAcc[0], earthAcc[1]);
+                Log.d("HI", "New Value of IMU, time:  " + new Timestamp(System.currentTimeMillis()));
+
+                // Aktualisiere die Werte im Service
+                Service.setAccel_x_wgs(earthAcc[0]);
+                Service.setAccel_y_wgs(earthAcc[1]);
+            //}
 
 
             //Log.d("Acceleration", "Values: (" + earthAcc[0] + ", " + earthAcc[1] + ", " + earthAcc[2] + ")");
