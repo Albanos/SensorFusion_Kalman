@@ -50,8 +50,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private final int PERMISSION_REQUEST = 0;
     private static int demoGNSSCounter = 0;
     private static long oldTimestamp = 0;
-    private static boolean locationAccurancyGood = false;
-    private static long timestampForIMU =System.currentTimeMillis();
+    private static long timestampForIMU = System.currentTimeMillis();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,48 +101,41 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                //if(location.getAccuracy() <= 5) {
-//                    if(! locationAccurancyGood) {
-//                        Toast.makeText(getApplicationContext(), "GNSS-Accurancy good", Toast.LENGTH_SHORT).show();
-//                        locationAccurancyGood = true;
-//                    }
+                longitude = location.getLongitude();
+                latitude = location.getLatitude();
+                altitude = location.getAltitude();
 
-                    longitude = location.getLongitude();
-                    latitude = location.getLatitude();
-                    altitude = location.getAltitude();
+                // Merke dir alle Koordinaten die rein kommen
+                Service.getListOfWGSCoordinates().add(new Coordinates(latitude, longitude, altitude));
 
-                    // Merke dir alle Koordinaten die rein kommen
-                    Service.getListOfWGSCoordinates().add(new Coordinates(latitude, longitude, altitude));
+                // Setze die Geschwindigkeitsgenauigkeit, um diese im Filter nutzen zu können --> NICHT VERFÜGBAR!!
+                //Service.setSpeedAccurancy_wgs(location.getSpeedAccuracyMetersPerSecond());
 
-                    // Setze die Geschwindigkeitsgenauigkeit, um diese im Filter nutzen zu können --> NICHT VERFÜGBAR!!
-                    //Service.setSpeedAccurancy_wgs(location.getSpeedAccuracyMetersPerSecond());
+                // Berechne die WGS-Geschwindigkeit, auf Basis des Betrages der Geschwindigkeit:
+                // Berechnung erfolgt ähnlich den kartesischen Koordinaten
+                // speed_x = speed_location * sin( rad(bearing) )
+                // speed_y = speed_location * cos( rad(bearing) )
+                float speedOfGnss = location.hasSpeed() ? location.getSpeed() : 0;
+                float bearing = location.hasBearing() ? location.getBearing() : 1;
 
-                    // Berechne die WGS-Geschwindigkeit, auf Basis des Betrages der Geschwindigkeit:
-                    // Berechnung erfolgt ähnlich den kartesischen Koordinaten
-                    // speed_x = speed_location * sin( rad(bearing) )
-                    // speed_y = speed_location * cos( rad(bearing) )
-                    float speedOfGnss = location.hasSpeed() ? location.getSpeed() : 0;
-                    float bearing = location.hasBearing() ? location.getBearing() : 1;
+                Service.setSpeed_x_wgs(speedOfGnss * Math.sin(Math.toRadians(bearing)));
+                Service.setSpeed_y_wgs(speedOfGnss * Math.cos(Math.toRadians(bearing)));
 
-                    Service.setSpeed_x_wgs(speedOfGnss * Math.sin(Math.toRadians(bearing)));
-                    Service.setSpeed_y_wgs(speedOfGnss * Math.cos(Math.toRadians(bearing)));
+                // Setze die locationgenauigkeit im Service, um diese später für den Filter zu verwenden
+                Service.setLocationAccurancy(location.getAccuracy());
 
-                    // Setze die locationgenauigkeit im Service, um diese später für den Filter zu verwenden
-                    Service.setLocationAccurancy(location.getAccuracy());
+                // Als Geschwindigkeit wird zunächst die GNSS-Geschwindigkeit genutzt (in m/s)
+                speed = location.hasSpeed() ? location.getSpeed() : -1;
 
-                    // Als Geschwindigkeit wird zunächst die GNSS-Geschwindigkeit genutzt (in m/s)
-                    speed = location.hasSpeed() ? location.getSpeed() : -1;
+                createGlobalPositionForDrawLatAndLon(latitude, longitude, altitude);
+                writeGPSValuesToScreen(latitude, longitude, altitude, speed);
+                Log.d("LH", "GPS-Update, time:  " + new Timestamp(System.currentTimeMillis()));
 
-                    createGlobalPositionForDrawLatAndLon(latitude, longitude, altitude);
-                    writeGPSValuesToScreen(latitude, longitude, altitude, speed);
-                    Log.d("LH", "GPS-Update, time:  " + new Timestamp(System.currentTimeMillis()));
-
-                    // Starte den Filter in einem separaten Thread, sobald ein kartesischen Punkt existiert
-                    Service.calculateCartesianPointForLastKnownPosition();
-                    if (Service.getListOfPoints().size() >= 1) {
-                        Service.getThread().start();
-                    }
-                //}
+                // Starte den Filter in einem separaten Thread, sobald ein kartesischen Punkt existiert
+                Service.calculateCartesianPointForLastKnownPosition();
+                if (Service.getListOfPoints().size() >= 1) {
+                    Service.getThread().start();
+                }
             }
 
             @Override
@@ -168,6 +160,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /**
      * Erzeuge für Länge, Breite & Höhe GlobalPositions und speichere Sie im Service (wichtig für
      * das zeichnen der Koordinaten in der Ebene)
+     *
      * @param latitude
      * @param longitude
      * @param altitude
@@ -180,6 +173,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     /**
      * Frage die notwendigen Zugrifsrechte des Mobil-telefons ab
+     *
      * @param requestCode
      * @param permissions
      * @param grantResults
@@ -221,10 +215,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         TextView output_speed = findViewById(R.id.tv_outputSpeed);
 
         // Setze Text, falls Geschwindigkeit nicht vorliegen sollte
-        if(speed == -1){
+        if (speed == -1) {
             output_speed.setText("Speed not aviable");
-        }
-        else{
+        } else {
             output_speed.setText(Float.toString(speed));
         }
     }
@@ -258,6 +251,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private static float[] gravityValues = null;
     private static float[] magneticValues = null;
+
     @Override
     public void onSensorChanged(SensorEvent event) {
 
@@ -279,7 +273,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             // Berechne auf Basis der Lin.-Beschleunigung die lineare Geschwindigkeit
             Service.calculateLinearVelocity(linAccelerometer_x, linAccelerometer_y, dT);
             velocity = Service.getLinVeloc();
-            //writeVelocityValuesToScreen(velocity[0], velocity[1]);
         }
 
         // Berechnung der Beschleunigung im Erd-Koordinatensystem (WGS84), auf Basis der
@@ -287,7 +280,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Von: https://stackoverflow.com/a/36477630
         if ((gravityValues != null) && (magneticValues != null)
                 && (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)) {
-                //&& (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION)) {
 
             // Setze dt im Service und greife im Filter darauf zu
             Service.setDt(Service.getOldDt() == 0 ? 0.1f : (event.timestamp - Service.getOldDt()) / 1000000000.0f);
@@ -313,22 +305,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             android.opengl.Matrix.invertM(inv, 0, R, 0);
             android.opengl.Matrix.multiplyMV(earthAcc, 0, inv, 0, deviceRelativeAcceleration, 0);
 
-            // Test: wir setzen nur Werte in einem bestimmten Takt, um eine Überprüfung von IMU durchzuführen
-            //if((System.currentTimeMillis() - timestampForIMU) >= 500) {
-                timestampForIMU = System.currentTimeMillis();
-                writeAccelerometerValuesToScreen(earthAcc[0], earthAcc[1]);
-                Log.d("HI", "New Value of IMU, time:  " + new Timestamp(System.currentTimeMillis()));
+            timestampForIMU = System.currentTimeMillis();
+            writeAccelerometerValuesToScreen(earthAcc[0], earthAcc[1]);
+            Log.d("HI", "New Value of IMU, time:  " + new Timestamp(System.currentTimeMillis()));
 
-                // Aktualisiere die Werte im Service
-                Service.setAccel_x_wgs(earthAcc[0]);
-                Service.setAccel_y_wgs(earthAcc[1]);
-            //}
+            // Aktualisiere die Werte im Service
+            Service.setAccel_x_wgs(earthAcc[0]);
+            Service.setAccel_y_wgs(earthAcc[1]);
 
-
-            //Log.d("Acceleration", "Values: (" + earthAcc[0] + ", " + earthAcc[1] + ", " + earthAcc[2] + ")");
-            Service.calculateLinearVelocity(earthAcc[0],earthAcc[1], (float) Service.getDt());
-            //Service.calculateLinearVelocity(earthAcc[0],earthAcc[2], (float) Service.getDt());
-
+            Service.calculateLinearVelocity(earthAcc[0], earthAcc[1], (float) Service.getDt());
 
         } else if (event.sensor.getType() == Sensor.TYPE_GRAVITY) {
             gravityValues = event.values;
@@ -336,7 +321,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             magneticValues = event.values;
         }
     }
-
 
     private void writeAccelerometerValuesToScreen(float accelerometer_x, float accelerometer_y) {
         TextView output_Accelerometer_x = findViewById(R.id.tv_outputAccelerometer_X);
@@ -371,7 +355,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             Log.d("LH", "LocationListener reaktiviert");
         }
         // Ist der sensorManager null, wird die app vermutlich gerade installiert, deshalb registrierung überspringen
-        if(sensorManager != null) {
+        if (sensorManager != null) {
             registerLinAccelerometerListener();
         }
     }
@@ -384,6 +368,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     /**
      * Handelt alle "Button-Aktivitäten" in der Main-Activity
+     *
      * @param view
      */
     public void inMainActivityOnButtonClick(View view) {
@@ -397,9 +382,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(geoUri));
             this.startActivity(intent);
-        }
-
-        else if (view.getId() == R.id.btn_toCoordinateScreen) {
+        } else if (view.getId() == R.id.btn_toCoordinateScreen) {
             Toast.makeText(this,
                     "Anzahl, echte Punkte:  " + Service.getListOfPoints().size() + "\n\n" +
                             "Anzahl der geschätzten Punkte:  " + Service.getEstimatedPoints().size(),
@@ -418,11 +401,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             // (In Richtung osten ; Rathaus), jeweills mit 5m, 10m und 15m vom ersten Punkt entfernt
             // der letzte, fünfte Punkt, befindet sich in 180 grad unter Punkt 1, 10m Abstand
 
-//            latitude = new double[]{51.311996, 51.311991, 51.312006, 51.312000, 51.311902}[demoGNSSCounter];
-//            longitude = new double[]{9.473645, 9.473719, 9.473798, 9.473864, 9.473643}[demoGNSSCounter];
-//            altitude = 211;
-//            speed = 0f;
-
             latitude = new double[]{51.196046, 51.196041, 51.196034, 51.196030}[demoGNSSCounter];
             longitude = new double[]{9.728800, 9.728893, 9.728991, 9.729143}[demoGNSSCounter];
             altitude = 211;
@@ -437,7 +415,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             Service.calculateCartesianPointForLastKnownPosition();
             writeGPSValuesToScreen(latitude, longitude, altitude, speed);
 
-            if(Service.getListOfPoints().size() > 1) {
+            if (Service.getListOfPoints().size() > 1) {
                 Service.calculateAngleAndDistanceByPoint(Service.getListOfPoints().get(1));
                 Service.calculateWGSCoordinateByCartesianPoint(Service.getListOfPoints().get(1));
                 Coordinates coordinates = Service.getPointToWGSMap().get(Service.getListOfPoints().get(1));
@@ -450,32 +428,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         // Starte den GNSS-Listener, also mit live-Daten
         else if (view.getId() == R.id.btn_startGNSSListener) {
-            //getLocationAndRegisterGnssListener();
             registerGPSListener();
         }
 
         // Führe eine Schätzung der Position durch
         else if (view.getId() == R.id.btn_exportToExcel) {
-//            Toast.makeText(this,
-//                    "Letzter, echter Punkt:  " + Math.round(Service.getListOfPoints().getLast().getX())
-//                            + " ; " +  + Math.round(Service.getListOfPoints().getLast().getY()) + "("+Service.getListOfPoints().size() +")"+ "\n\n"
-//                            + "Letzter geschätzter Punkt:  "
-//                            + Service.getEstimatedPoints().getLast().getX()
-//                            + " ; " + Service.getEstimatedPoints().getLast().getY() + "(" + Service.getEstimatedPoints().size() +")"+ "\n\n"
-//                    + "Geschätzte Geschw.:  " + Service.getEstimatedVelocity().getLast().getX() + " ; " + Service.getEstimatedVelocity().getLast().getY(),
-//                    Toast.LENGTH_LONG).show();
-
-            // Zum Test den Button zweck-entfremdet: Zeichne den Plot, indem du die jeweilige Activity "activity_test_with_..." startest
-            //startActivity(new Intent(MainActivity.this, testActivityWithPlotFramework.class));
-
-//            Toast.makeText(this, "Geschwindigkeit, x:  " + Service.getLinVeloc()[0] +
-//                            "\n" + "Geschwindigkeit, y:  " + Service.getLinVeloc()[1],
-//                    Toast.LENGTH_LONG).show();
             Service.getThread().stop();
 
             ExcelFileCreator export = new ExcelFileCreator();
             export.createExcelFile();
-            Toast.makeText(getApplicationContext(),"Export erfolgreich",Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), "Export erfolgreich", Toast.LENGTH_LONG).show();
 
 
 //            CsvFileCreator export = new CsvFileCreator();
@@ -486,16 +448,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
 
         // Test von Zeichnungsframeworks
-        else if(view.getId() == R.id.btn_testFrameworkPlot){
+        else if (view.getId() == R.id.btn_testFrameworkPlot) {
             //startActivity(new Intent(MainActivity.this, testActivityWithPlotFramework.class));
-//            Toast.makeText(this,
-//                    "Letzter, echter Punkt:  " + Math.round(Service.getListOfPoints().getLast().getX())
-//                            + " ; " +  + Math.round(Service.getListOfPoints().getLast().getY()) + "("+Service.getListOfPoints().size() +")"+ "\n\n"
-//                            + "Letzter geschätzter Punkt:  "
-//                            + Service.getEstimatedPoints().getLast().getX()
-//                            + " ; " + Service.getEstimatedPoints().getLast().getY() + "(" + Service.getEstimatedPoints().size() +")"+ "\n\n"
-//                    + "Geschätzte Geschw.:  " + Service.getEstimatedVelocity().getLast().getX() + " ; " + Service.getEstimatedVelocity().getLast().getY(),
-//                    Toast.LENGTH_LONG).show();
 
             Toast.makeText(this,
                     "Erster kartsischer Punkt:  " + Service.getListOfPoints().getFirst().getX()

@@ -1,6 +1,5 @@
 package com.example.luanhajzeraj.SensorFusion_Kalman;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -31,7 +30,7 @@ class Service {
     private static Pair initialPoint;
     private static boolean canSave = true;
     private static boolean semaphore = true;
-    private static float[] linVeloc = new float[]{0,0};
+    private static float[] linVeloc = new float[]{0, 0};
     private static float locationAccurancy;
     private static float accel_x_wgs;
     private static float accel_y_wgs;
@@ -39,15 +38,15 @@ class Service {
     private static boolean isDrawing = false;
     private static FilterThread thread = new FilterThread();
     private static LinkedList<Pair> estimatedVelocity = new LinkedList<>();
-    private static double dt =0;
-    private static double oldDt =0;
+    private static double dt = 0;
+    private static double oldDt = 0;
     private static HashMap<Pair, List<Double>> angleDistancePairMap = new HashMap<>();
     private static LinkedList<Coordinates> listOfWGSDestinationPoints = new LinkedList<>();
     // Geschwindigkeit, basierend auf der Geschwindigkeit der Location
-    private static double speed_x_wgs =0;
-    private static double speed_y_wgs =0;
+    private static double speed_x_wgs = 0;
+    private static double speed_y_wgs = 0;
     // Genauigkeit der Geschwindigkeit, in meter/sec
-    private static double speedAccurancy_wgs =0;
+    private static double speedAccurancy_wgs = 0;
     private static LinkedList<Coordinates> listOfWGSCoordinates = new LinkedList<>();
     private static LinkedHashMap<Pair, Coordinates> pointToWGSMap = new LinkedHashMap<>();
     private static LinkedList<Pair> listWithUValues = new LinkedList<>();
@@ -90,10 +89,10 @@ class Service {
                 List<Double> list = new ArrayList<>();
                 list.add(distance);
                 list.add(angle);
-                Service.getAngleDistancePairMap().put(point,list);
+                Service.getAngleDistancePairMap().put(point, list);
 
                 // Setze den ersten berechneten Punkt
-                if(Service.getFirstCartasianPoint() == null){
+                if (Service.getFirstCartasianPoint() == null) {
                     Service.setFirstCartasianPoint(new Pair(
                             distance * Math.sin(Math.toRadians(angle)),
                             distance * Math.cos(Math.toRadians(angle))));
@@ -103,7 +102,7 @@ class Service {
             // Setze den initialPoint mit seinen Koordinaten genau einmal: Wähle dafür den ersten
             // berechneten Punkt auf Basis der "firstGlobalPosition", da dieser x- & y-Koordinaten.
             // firstGlobalPosition ist eben eine GlobalPosition
-            if(semaphore) {
+            if (semaphore) {
                 initialPoint = new Pair(getListOfPoints().get(0).getX(), getListOfPoints().get(0).getY());
                 semaphore = false;
             }
@@ -112,69 +111,8 @@ class Service {
         return false;
     }
 
-
-    /**
-     * Berechnet auf Basis der Liste von GlobalPositions die kartesischen Koordinaten und speichert
-     * diese in listOfPoints.
-     *
-     * @return
-     */
-    static boolean calculateCartesianCoordinats(Timestamp t) {
-        //listOfPoints.clear();
+    static void calculateCartesianPointForLastKnownPosition() {
         if (listOfPositions.size() >= 2) {
-
-            // Berechne für den Rest die x- und y-Koordinaten
-            for (GlobalPosition gp : listOfPositions) {
-                // Berechne Abstand der jeweiligen position zur ersten Position
-                // Der Abstand wird in Metern angegeben; Der Winkel wird im Winkelmaß (deg) berechnet,
-                // ist immer am Nordpol ausgerichtet und bewegt sich entgegen des Uhrzeigersinns
-                // Beispiel: Punkt 1 ist irgendwo im Raum. Punkt 2 ist rechts daneben, dann ist der
-                // Winkel etwa 90 Grad
-                double distance = coordinateDistanceBetweenTwoPoints(firstGlobalPositionOfList, gp);
-                double angle = coordinateAngleBetweenTwoPoints(firstGlobalPositionOfList, gp);
-
-                // Berechne auf Basis von Distanz und Winkel die x- und y-Komponente des zweiten Punktes
-                // Formeln (SEHR WICHTIG: Eingabe MUSS in rad sein):
-                // x = dist. * sin(rad (angle) )
-                // y = dist. * cos(rad (angle) )
-                Pair point = new Pair(distance * Math.sin(Math.toRadians(angle)), distance * Math.cos(Math.toRadians(angle)));
-
-                Service.getListOfPoints().add(point);
-
-
-                // MERKE: Dies muss eigentlich für die geschätzten Punkte erfolgen!!!
-                // Jedoch ist noch unklar, wie Winkel und Abstand der geschätzten, KARTESISCHEN Pkt.
-                // zum Ausgangspunkt (GLOBALPOSITION) erfolgen soll...
-
-                // Füge der Map den Punkt mit seinem Absatnd und Winkel hinzu, um Später die Punkte
-                //wie zurück (in Kugelkoordinaten) rechnen zu können
-//                List<Double> list = new ArrayList<>();
-//                list.add(distance);
-//                list.add(angle);
-//                Service.getAngleDistancePairMap().put(point,list);
-
-                // Setze den ersten berechneten Punkt
-                if(Service.getFirstCartasianPoint() == null){
-                    Service.setFirstCartasianPoint(new Pair(
-                            distance * Math.sin(Math.toRadians(angle)),
-                            distance * Math.cos(Math.toRadians(angle))));
-                }
-            }
-
-            // Setze den initialPoint mit seinen Koordinaten genau einmal: Wähle dafür den ersten
-            // berechneten Punkt auf Basis der "firstGlobalPosition", da dieser x- & y-Koordinaten.
-            // firstGlobalPosition ist eben eine GlobalPosition
-            if(semaphore) {
-                initialPoint = new Pair(getListOfPoints().get(0).getX(), getListOfPoints().get(0).getY());
-                semaphore = false;
-            }
-            return true;
-        }
-        return false;
-    }
-
-    static void calculateCartesianPointForLastKnownPosition(){
-        if(listOfPositions.size() >= 2){
             GlobalPosition lastKnownPosition = listOfPositions.getLast();
 
             double distance = coordinateDistanceBetweenTwoPoints(firstGlobalPositionOfList, lastKnownPosition);
@@ -185,7 +123,7 @@ class Service {
             Service.getListOfPoints().add(point);
 
             // Setze den ersten berechneten Punkt
-            if(Service.getFirstCartasianPoint() == null){
+            if (Service.getFirstCartasianPoint() == null) {
                 Service.setFirstCartasianPoint(new Pair(
                         distance * Math.sin(Math.toRadians(angle)),
                         distance * Math.cos(Math.toRadians(angle))));
@@ -193,18 +131,14 @@ class Service {
         }
     }
 
-    static void calculateAngleAndDistanceByPoint(Pair point){
+    static void calculateAngleAndDistanceByPoint(Pair point) {
         double pointX = point.getX();
         double pointY = point.getY();
 
         // Ermittle die Differenz zum ersten Punkt
-//        double firstPointX = Service.getListOfPoints().getFirst().getX();
-//        double firstPointY = Service.getListOfPoints().getFirst().getY();
         double firstPointX = Service.getFirstCartasianPoint().getX();
         double firstPointY = Service.getFirstCartasianPoint().getY();
 
-//        double x = Math.abs(firstPointX - pointX);
-//        double y = Math.abs(firstPointY - pointY);
         double x = firstPointX - pointX;
         double y = firstPointY - pointY;
 
@@ -214,19 +148,15 @@ class Service {
 
         // Bestimme den Winkel über Atctan, da An- & Gegenkathete über Punkt bekannt
         double angle = 0;
-        if(y == 0 && x > 0){
-            angle = Math.toDegrees( Math.PI / 2 );
-        }
-        else if(y == 0 && x < 0){
-            angle = Math.toDegrees( (Math.PI / 2) * -1 );
-        }
-        else if( y > 0){
+        if (y == 0 && x > 0) {
+            angle = Math.toDegrees(Math.PI / 2);
+        } else if (y == 0 && x < 0) {
+            angle = Math.toDegrees((Math.PI / 2) * -1);
+        } else if (y > 0) {
             //angle = Math.toDegrees( Math.atan(x / y));
-            angle = Math.toDegrees( Math.atan(x / y) + Math.PI);
-        }
-
-        else if(y < 0){
-            angle = Math.toDegrees( Math.atan( x / y ) );
+            angle = Math.toDegrees(Math.atan(x / y) + Math.PI);
+        } else if (y < 0) {
+            angle = Math.toDegrees(Math.atan(x / y));
             //angle = Math.toDegrees( Math.atan( x / y ) + Math.PI );
         }
 
@@ -235,10 +165,10 @@ class Service {
         LinkedList<Double> foo = new LinkedList<>();
         foo.add(angle);
         foo.add(distance);
-        Service.getAngleDistancePairMap().put(point,foo);
+        Service.getAngleDistancePairMap().put(point, foo);
     }
 
-    static void calculateWGSCoordinateByCartesianPoint(Pair point){
+    static void calculateWGSCoordinateByCartesianPoint(Pair point) {
         // Ermittle Winkel und Distanz, passend zum point
         List<Double> valuesForPoint = Service.getAngleDistancePairMap().get(point);
         Double angleOfPoint = valuesForPoint.get(0);
@@ -253,8 +183,8 @@ class Service {
         Service.getPointToWGSMap().put(point, new Coordinates(globalCoordinates.getLatitude(), globalCoordinates.getLongitude()));
     }
 
-    static void calculateWGSCoordinatesForAllCartesianPoints(){
-        for(Pair p : Service.getEstimatedPoints()){
+    static void calculateWGSCoordinatesForAllCartesianPoints() {
+        for (Pair p : Service.getEstimatedPoints()) {
             double distance = Service.getAngleDistancePairMap().get(p).get(0);
             double angle = Service.getAngleDistancePairMap().get(p).get(1);
 
@@ -264,45 +194,21 @@ class Service {
 
             Coordinates coordinates = new Coordinates(globalCoordinates.getLatitude(), globalCoordinates.getLongitude());
 
-            if(! Service.getListOfWGSDestinationPoints().contains(coordinates)) {
+            if (!Service.getListOfWGSDestinationPoints().contains(coordinates)) {
                 Service.getListOfWGSDestinationPoints().add(coordinates);
             }
         }
     }
 
     /**
-     * Berechnet die Basisvektoren der GNSS-Geschwindigkeit (Geschwindigkeit in x- & y-Richtung).
-     *
-     * @param gnssVelocity
-     * @param position
-     * @return
-     */
-    static List<Double> calculateBaseVectorsOfGNSSVelocity(float gnssVelocity, GlobalPosition position){
-        List<Double> returnList = new ArrayList<>();
-
-        // Winkel zwischen allererstem Datum und position (im Gradmaß)
-        double angle = coordinateAngleBetweenTwoPoints(firstGlobalPositionOfList, position);
-
-        // Berechne die Geschwindigkeit in x- & y-Richtung (gnssVelocity stellt Betrag dar):
-        // vX = gnssVelocity * sin(rad(angle))
-        // vY = gnssVelocity * cos(rad(angle))
-        double velocity_x = gnssVelocity * Math.sin(Math.toRadians(angle));
-        double velocity_y = gnssVelocity * Math.cos(Math.toRadians(angle));
-
-        returnList.add(velocity_x);
-        returnList.add(velocity_y);
-
-        return returnList;
-    }
-
-    /**
      * Berechnet die Distanz zwischen zwei globalPositions
+     *
      * @param g1
      * @param g2
      * @return
      */
-    static double coordinateDistanceBetweenTwoPoints(GlobalPosition g1, GlobalPosition g2){
-        if(g1 != null && g2 != null){
+    static double coordinateDistanceBetweenTwoPoints(GlobalPosition g1, GlobalPosition g2) {
+        if (g1 != null && g2 != null) {
             GeodeticCalculator geodeticCalculator = new GeodeticCalculator();
 
             GeodeticMeasurement gm = geodeticCalculator
@@ -316,12 +222,13 @@ class Service {
     /**
      * Berechnet den Winkel zwischen zwei globalPositions im Gradmaß (Winkel ist am Noden
      * ausgerichtet ; Winkelrichtung ist im Uhrzeigersinn)
+     *
      * @param g1
      * @param g2
      * @return
      */
-    static double coordinateAngleBetweenTwoPoints(GlobalPosition g1, GlobalPosition g2){
-        if(g1 != null && g2 != null){
+    static double coordinateAngleBetweenTwoPoints(GlobalPosition g1, GlobalPosition g2) {
+        if (g1 != null && g2 != null) {
             GeodeticCalculator geodeticCalculator = new GeodeticCalculator();
 
             GeodeticMeasurement gm = geodeticCalculator
@@ -353,7 +260,7 @@ class Service {
     }
 
     public static void setFirstGlobalPositionOfList(GlobalPosition firstGlobalPositionOfList) {
-        if(canSave) {
+        if (canSave) {
             Service.firstGlobalPositionOfList = firstGlobalPositionOfList;
             listOfPositions.remove(firstGlobalPositionOfList);
             canSave = false;
@@ -371,6 +278,7 @@ class Service {
     static LinkedList<Pair> getListOfPoints() {
         return listOfPoints;
     }
+
     static LinkedList<GlobalPosition> getListOfPositions() {
         return listOfPositions;
     }

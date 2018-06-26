@@ -1,12 +1,6 @@
 package model;
 
-import android.util.Log;
-
 import com.instacart.library.truetime.TrueTimeRx;
-
-import java.sql.Timestamp;
-
-import io.reactivex.schedulers.Schedulers;
 
 /**
  * Created by Luan Hajzeraj on 18.03.2018.
@@ -18,7 +12,7 @@ public class Pair {
     //private Timestamp timestamp;
     private long timestamp;
 
-    public Pair(double x, double y){
+    public Pair(double x, double y) {
         this.x = x;
         this.y = y;
         //this.timestamp = new Timestamp(System.currentTimeMillis());
@@ -43,15 +37,6 @@ public class Pair {
     public double getY() {
         return y;
     }
-
-//    public Timestamp getTimestamp() {
-//        return timestamp;
-//    }
-//
-//    public void setTimestamp(Timestamp timestamp) {
-//        this.timestamp = timestamp;
-//    }
-
 
     public long getTimestamp() {
         return timestamp;

@@ -1,10 +1,8 @@
 package com.example.luanhajzeraj.SensorFusion_Kalman;
 
-import android.content.Context;
 import android.os.Environment;
 import android.util.Log;
 
-import org.apache.commons.math3.linear.RealVector;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.hssf.usermodel.HSSFRow;
@@ -12,11 +10,9 @@ import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.Calendar;
 import java.util.LinkedList;
 
 import model.Coordinates;
@@ -97,7 +93,7 @@ public class ExcelFileCreator {
 
         // Zeichne originalen kartesischen Punkte
         int i = 2;
-        for(Pair p : Service.getListOfPoints()){
+        for (Pair p : Service.getListOfPoints()) {
             //String timestamp = p.getTimestamp().toString();
             long timestamp = p.getTimestamp();
             Double x = p.getX();
@@ -116,8 +112,8 @@ public class ExcelFileCreator {
 
         // Zeichne die geschätzten Punkte
         i = 2;
-        int j=0;
-        for(Pair p : Service.getEstimatedPoints()){
+        int j = 0;
+        for (Pair p : Service.getEstimatedPoints()) {
             //String timestamp = p.getTimestamp().toString();
             long timestamp = p.getTimestamp();
             Double x = p.getX();
@@ -163,7 +159,7 @@ public class ExcelFileCreator {
 
         i = 2;
         // Zeichne die originalen WGS Punkte
-        for(Coordinates c : Service.getListOfWGSCoordinates()){
+        for (Coordinates c : Service.getListOfWGSCoordinates()) {
             double latitude = c.getLatitude();
             double longitude = c.getLongitude();
             double altitude = c.getAltitude();
