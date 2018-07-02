@@ -158,6 +158,7 @@ public class EstimationFilter {
             }
 
             timestamp = System.currentTimeMillis();
+            Log.d("HI", "Iteration:  " + i++);
 
             // Aktualisiere u
             u.setEntry(0, Service.getAccel_x_wgs());

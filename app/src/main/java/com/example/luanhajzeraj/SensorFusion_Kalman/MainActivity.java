@@ -307,7 +307,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             timestampForIMU = System.currentTimeMillis();
             writeAccelerometerValuesToScreen(earthAcc[0], earthAcc[1]);
-            Log.d("HI", "New Value of IMU, time:  " + new Timestamp(System.currentTimeMillis()));
 
             // Aktualisiere die Werte im Service
             Service.setAccel_x_wgs(earthAcc[0]);

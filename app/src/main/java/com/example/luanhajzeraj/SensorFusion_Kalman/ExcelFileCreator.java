@@ -74,6 +74,12 @@ public class ExcelFileCreator {
         HSSFCell cell_2G_sheet2 = sheet2_row2.createCell(6);
         cell_2G_sheet2.setCellValue(new HSSFRichTextString("Velocity_Y"));
 
+        HSSFCell cell_2H_sheet2 = sheet2_row2.createCell(7);
+        cell_2H_sheet2.setCellValue(new HSSFRichTextString("Latitude"));
+
+        HSSFCell cell_2I_sheet2 = sheet2_row2.createCell(8);
+        cell_2I_sheet2.setCellValue(new HSSFRichTextString("Longitude"));
+
         HSSFRow sheet3_row1 = thirdSheet.createRow(0);
         HSSFCell cell_1A_sheet3 = sheet3_row1.createCell(0);
         cell_1A_sheet3.setCellValue(new HSSFRichTextString("Original_WGS"));
