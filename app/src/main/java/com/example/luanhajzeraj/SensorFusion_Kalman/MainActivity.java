@@ -2,6 +2,7 @@ package com.example.luanhajzeraj.SensorFusion_Kalman;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -12,6 +13,8 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -61,14 +64,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void initializeTimeNowFrameworkForRealTime() {
-        TrueTimeRx.build()
-                .initializeRx("time.google.com")
-                .subscribeOn(Schedulers.io())
-                .subscribe(date -> {
-                    Log.v("HI", "TrueTime was initialized and we have a time: " + date);
-                }, throwable -> {
-                    throwable.printStackTrace();
-                });
+        // Es muss für das spätere
+        if(checkInternetConnectivity()) {
+            TrueTimeRx.build()
+                    .initializeRx("time.google.com")
+                    .subscribeOn(Schedulers.io())
+                    .subscribe(date -> {
+                        Log.v("HI", "TrueTime was initialized and we have a time: " + date);
+                    }, throwable -> {
+                        throwable.printStackTrace();
+                    });
+        }
+
+        // Es MUSS für das setzen des timestamps im filter einmal eine Internet-connection vorliegen
+        else if(!checkInternetConnectivity() && !TrueTimeRx.isInitialized()){
+            Toast.makeText(getApplicationContext(), "You must have internet-connectivity. Please activate WLAN",
+                    Toast.LENGTH_LONG).show();
+
+            finish();
+        }
     }
 
     private void showValueOfPosition() {
@@ -78,7 +92,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
                             Manifest.permission.READ_EXTERNAL_STORAGE,
-                            Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                            Manifest.permission.ACCESS_NETWORK_STATE},
                     PERMISSION_REQUEST);
         }
         //Berechtigungen wurden zuvor schon erteilt
@@ -455,5 +470,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             + " ; " + Service.getListOfPoints().getFirst().getY(),
                     Toast.LENGTH_LONG).show();
         }
+    }
+
+    private boolean checkInternetConnectivity(){
+        ConnectivityManager connectivityManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        if(connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
+                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
+            //we are connected to a network
+            return true;
+        }
+        else
+            return false;
     }
 }
