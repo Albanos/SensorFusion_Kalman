@@ -4,6 +4,7 @@
     <string name="tf_Name_Longitude">Longitude</string>
 
     <string name="tf_Name_Accel_X">Accel_X (WGS84)</string>
+    <string name="tf_Name_LocationAccurany">Loc.Accu.</string>
     <string name="tf_Name_Accel_Y">Accel_Y (WGS84)</string>
     <string name="tf_Name_Veloc_X">Velocity_X</string>
     <string name="tf_Name_Veloc_Y">Velocity_Y</string>
@@ -12,4 +13,11 @@
     <string name="action_settings">Settings</string>
     <string name="btn_exportToExcel">Export Measurement to Excel</string>
     <string name="btn_testPlotFramework">Test-Plot</string>
+    <string name="btn_startA2B">Point A2B</string>
+    <string name="btn_startB2C">Point B2C</string>
+    <string name="btn_startC2B">Point C2B</string>
+    <string name="btn_startB2A">Point B2A</string>
+    <string name="btn_runGNSSListenerNormal">Run GNSS-listener normal</string>
+    <string name="btn_showGnssValues">Show GNSS values and run normal</string>
+
 </resources>

@@ -22,7 +22,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_alignStart="@+id/tv_nameLatitudeSystem"
-            android:layout_marginTop="171dp"
+            android:layout_marginTop="229dp"
             android:text="@string/tf_Name_Accel_X"
             android:textSize="18sp"
             tools:layout_editor_absoluteX="0dp"
@@ -32,9 +32,9 @@
             android:id="@+id/tv_nameAccelerometerY"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignEnd="@+id/tv_nameAccelerometerX"
-            android:layout_below="@+id/tv_nameAccelerometerX"
-            android:layout_marginTop="17dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignStart="@+id/tv_nameAccelerometerX"
+            android:layout_marginTop="193dp"
             android:text="@string/tf_Name_Accel_Y"
             android:textSize="18sp" />
 
@@ -109,15 +109,6 @@
             android:textSize="18sp" />
 
         <Button
-            android:id="@+id/btn_plotLocation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentStart="true"
-            android:onClick="inMainActivityOnButtonClick"
-            android:text="Plot Location to map" />
-
-        <Button
             android:id="@+id/btn_toCoordinateScreen"
             android:layout_width="166dp"
             android:layout_height="wrap_content"
@@ -127,33 +118,23 @@
             android:text="Draw Lat and Lon" />
 
         <Button
-            android:id="@+id/btn_generateTestGNSS"
-            android:layout_width="187dp"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentStart="true"
-            android:layout_marginBottom="59dp"
-            android:onClick="inMainActivityOnButtonClick"
-            android:text="Generate Test GNSS" />
-
-        <Button
             android:id="@+id/btn_startGNSSListener"
-            android:layout_width="164dp"
+            android:layout_width="308dp"
             android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_alignTop="@+id/btn_generateTestGNSS"
+            android:layout_above="@+id/btn_exportToExcel"
+            android:layout_centerHorizontal="true"
             android:onClick="inMainActivityOnButtonClick"
-            android:text="Start GNSS-List" />
+            android:text="@string/btn_showGnssValues" />
 
         <TextView
+            android:id="@+id/textView4"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignStart="@+id/tv_nameLongitudeSystem"
-            android:layout_below="@+id/tv_nameLongitudeSystem"
-            android:layout_marginTop="11dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignStart="@+id/tv_nameAccelerometerX"
+            android:layout_marginTop="126dp"
             android:text="@string/tf_Name_Altitude"
-            android:textSize="18sp"
-            android:id="@+id/textView4" />
+            android:textSize="18sp" />
 
         <TextView
             android:id="@+id/tv_outputAltitude"
@@ -170,7 +151,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_alignStart="@+id/tv_nameAccelerometerX"
-            android:layout_marginTop="133dp"
+            android:layout_marginTop="161dp"
             android:text="@string/tf_Name_Speed"
             android:textSize="18sp" />
 
@@ -189,18 +170,74 @@
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_alignParentStart="true"
-            android:layout_marginBottom="118dp"
             android:onClick="inMainActivityOnButtonClick"
             android:text="@string/btn_exportToExcel" />
 
-        <Button
-            android:id="@+id/btn_testFrameworkPlot"
-            android:layout_width="164dp"
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignStart="@+id/btn_startGNSSListener"
-            android:layout_alignTop="@+id/btn_exportToExcel"
+            android:layout_alignParentTop="true"
+            android:layout_alignStart="@+id/tv_nameAccelerometerX"
+            android:layout_marginTop="94dp"
+            android:text="@string/tf_Name_LocationAccurany"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tv_locationAccurancy"
+            android:layout_width="153dp"
+            android:layout_height="25dp"
+            android:layout_alignStart="@+id/tv_outputLatitudeSystem"
+            android:layout_alignTop="@+id/textView"
+            android:text="..."
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/btn_startA2B"
+            android:layout_width="166dp"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/btn_startC2B"
+            android:layout_alignParentStart="true"
             android:onClick="inMainActivityOnButtonClick"
-            android:text="@string/btn_testPlotFramework" />
+            android:text="@string/btn_startA2B" />
+
+        <Button
+            android:id="@+id/btn_startB2C"
+            android:layout_width="166dp"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/btn_toCoordinateScreen"
+            android:layout_alignTop="@+id/btn_startA2B"
+            android:onClick="inMainActivityOnButtonClick"
+            android:text="@string/btn_startB2C" />
+
+        <Button
+            android:id="@+id/btn_startC2B"
+            android:layout_width="166dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginBottom="105dp"
+            android:onClick="inMainActivityOnButtonClick"
+            android:text="@string/btn_startC2B" />
+
+        <Button
+            android:id="@+id/btn_startB2A"
+            android:layout_width="166dp"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/btn_toCoordinateScreen"
+            android:layout_alignTop="@+id/btn_startC2B"
+            android:onClick="inMainActivityOnButtonClick"
+            android:text="@string/btn_startB2A" />
+
+        <Button
+            android:id="@+id/btn_runGNSSListenerNormal"
+            android:layout_width="308dp"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/btn_startA2B"
+            android:layout_centerHorizontal="true"
+            android:onClick="inMainActivityOnButtonClick"
+            android:text="@string/btn_runGNSSListenerNormal"
+            android:visibility="invisible" />
 
 </RelativeLayout>
 <!--</android.support.constraint.ConstraintLayout>-->

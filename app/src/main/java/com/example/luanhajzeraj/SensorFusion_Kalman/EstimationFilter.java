@@ -93,6 +93,12 @@ public class EstimationFilter {
                 {0, 0, 0, 1}
         });
 
+//        B = new Array2DRowRealMatrix(new double[][]{
+//                {(Math.pow(dt, 2) / 2), 0},
+//                {0, (Math.pow(dt, 2) / 2)},
+//                {dt, 0},
+//                {0, dt}
+//        });
         B = new Array2DRowRealMatrix(new double[][]{
                 {0, 0},
                 {0, 0},
